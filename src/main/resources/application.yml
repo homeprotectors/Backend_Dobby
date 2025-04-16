@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/homeprotectors
+    username: postgres         # 만들 때 설정한 사용자명
+    password: 1321             # 비밀번호
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update         # 개발 중엔 update, 운영 땐 validate or none 권장
+    show-sql: true             # SQL 쿼리 콘솔에 출력
+    properties:
+      hibernate:
+        format_sql: true       # SQL 보기 편하게 정렬
+
+server:
+  port: 8080                   # 기본 포트 (필요시 변경 가능)

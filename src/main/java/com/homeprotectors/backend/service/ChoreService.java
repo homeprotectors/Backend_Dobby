@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.chore.ChoreCreateRequest;
+import com.homeprotectors.backend.dto.chore.ChoreListItemResponse;
 import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.repository.ChoreRepository;
 import com.homeprotectors.backend.repository.GroupRepository;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,4 +40,20 @@ public class ChoreService {
 
         return choreRepository.save(chore);
     }
+
+    public List<ChoreListItemResponse> getChoreList() {
+        Long groupId = 1L; // TODO: 인증 기반으로 동적으로 받을 예정
+
+        List<Chore> chores = choreRepository.findByGroupId(groupId);
+        return chores.stream()
+                .map(c -> new ChoreListItemResponse(
+                        c.getId(),
+                        c.getTitle(),
+                        c.getCycleDays(),
+                        c.getNextDue(),
+                        c.getReminderEnabled()
+                ))
+                .collect(Collectors.toList());
+    }
+
 }

@@ -1,4 +1,14 @@
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}  # 기본은 local
+
+---
+
+# local 설정
+spring:
+  config:
+    activate:
+      on-profile: local
   datasource:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
@@ -7,11 +17,35 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update         # 개발 중엔 update, 운영 땐 validate or none 권장
-    show-sql: true             # SQL 쿼리 콘솔에 출력
+      ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
-        format_sql: true       # SQL 보기 편하게 정렬
+        format_sql: true
 
 server:
-  port: 8080                   # 기본 포트 (필요시 변경 가능)
+  port: 8080
+
+---
+
+# production 설정
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false       # 콘솔 SQL 출력 비활성화 (보안 + 성능)
+    properties:
+      hibernate:
+        format_sql: false
+
+server:
+  port: 8080

@@ -22,7 +22,7 @@ public class ChoreController {
 
     private final ChoreService choreService;
 
-    @Operation(summary = "Create com.homeprotectors.backend.entity.Chore", description = "Create a new chore")
+    @Operation(summary = "chore 생성", description = "Create a new chore")
     @PostMapping
     public ResponseEntity<ResponseDTO<ChoreCreateResponse>> createChore(@Valid @RequestBody ChoreCreateRequest request) {
         Chore chore = choreService.createChore(request);

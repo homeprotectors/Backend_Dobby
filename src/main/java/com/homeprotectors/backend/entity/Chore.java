@@ -22,6 +22,7 @@ public class Chore {
     private String title;
 
     private Integer cycleDays;
+    private LocalDate startDate;
     private LocalDate lastDone;
     private LocalDate nextDue;
     private LocalDate reminderDate;

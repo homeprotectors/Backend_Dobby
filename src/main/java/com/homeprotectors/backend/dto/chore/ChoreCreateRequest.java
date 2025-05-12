@@ -23,7 +23,6 @@ public class ChoreCreateRequest {
     @Max(value = 365, message = "반복 주기는 365일 이하여야 합니다.")
     private Integer cycleDays;
 
-    @NotNull
     private LocalDate startDate;
 
     private Boolean reminderEnabled;

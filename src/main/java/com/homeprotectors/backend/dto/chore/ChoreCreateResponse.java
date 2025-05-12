@@ -15,6 +15,7 @@ import java.time.LocalTime;
 public class ChoreCreateResponse {
     private Long id;
     private String title;
+    private LocalDate startDate;
     private Integer cycleDays;
     private Boolean reminderEnabled;
     private Integer reminderDays;

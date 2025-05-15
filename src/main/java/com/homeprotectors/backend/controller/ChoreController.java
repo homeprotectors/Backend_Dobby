@@ -2,6 +2,7 @@ package com.homeprotectors.backend.controller;
 
 import com.homeprotectors.backend.dto.chore.ChoreCreateRequest;
 import com.homeprotectors.backend.dto.chore.ChoreCreateResponse;
+import com.homeprotectors.backend.dto.chore.ChoreEditRequest;
 import com.homeprotectors.backend.dto.chore.ChoreListItemResponse;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.entity.Chore;
@@ -30,6 +31,7 @@ public class ChoreController {
         ChoreCreateResponse response = new ChoreCreateResponse(
                 chore.getId(),
                 chore.getTitle(),
+                chore.getStartDate(),
                 chore.getCycleDays(),
                 chore.getReminderEnabled(),
                 chore.getReminderDays()
@@ -39,11 +41,40 @@ public class ChoreController {
                 .body(new ResponseDTO<>(true, "Chore created successfully", response));
     }
 
-    @Operation(summary = "chore 목록 조회", description = "로그인 사용자의 그룹에 속한 모든 chore 목록을 조회합니다.")
+    @Operation(summary = "chore 목록 조회", description = "Retrieve the list of chores in the group that the user belongs to")
     @GetMapping
     public ResponseDTO<List<ChoreListItemResponse>> getChoreList() {
         List<ChoreListItemResponse> chores = choreService.getChoreList();  // 인증 기반 그룹 필터링 가정
         return new ResponseDTO<>(true, "Chore list retrieved", chores);
     }
+
+    @Operation(summary = "chore 수정", description = "Edit an existing chore")
+    @PutMapping("/{choreId}")
+    public ResponseEntity<ResponseDTO<ChoreCreateResponse>> editChore(
+            @PathVariable Long choreId,
+            @RequestBody ChoreEditRequest request) {
+
+        Chore updated = choreService.editChore(choreId, request);
+
+        ChoreCreateResponse response = new ChoreCreateResponse(
+                updated.getId(),
+                updated.getTitle(),
+                updated.getStartDate(),
+                updated.getCycleDays(),
+                updated.getReminderEnabled(),
+                updated.getReminderDays()
+        );
+
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Chore updated successfully", response));
+    }
+
+    @Operation(summary = "chore 삭제", description = "Delete a chore by ID")
+    @DeleteMapping("/{choreId}")
+    public ResponseEntity<Void> deleteChore(@PathVariable Long choreId) {
+        choreService.deleteChore(choreId);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+
 
 }

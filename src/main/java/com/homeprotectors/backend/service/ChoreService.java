@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Data
@@ -114,6 +115,15 @@ public class ChoreService {
 
         return choreRepository.save(chore);
     }
+
+    public void deleteChore(Long choreId) {
+        Chore chore = choreRepository.findById(choreId)
+                .orElseThrow(() -> new NoSuchElementException("해당 chore가 존재하지 않습니다."));
+
+        // TODO: 인증 사용자 그룹 소속 여부 확인 필요 (JWT 인증 후 구현 예정)
+        choreRepository.delete(chore);
+    }
+
 
 
 }

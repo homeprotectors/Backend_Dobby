@@ -68,5 +68,13 @@ public class ChoreController {
         return ResponseEntity.ok(new ResponseDTO<>(true, "Chore updated successfully", response));
     }
 
+    @Operation(summary = "chore 삭제", description = "Delete a chore by ID")
+    @DeleteMapping("/{choreId}")
+    public ResponseEntity<Void> deleteChore(@PathVariable Long choreId) {
+        choreService.deleteChore(choreId);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+
 
 }

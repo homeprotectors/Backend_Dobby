@@ -36,19 +36,18 @@ public class ChoreService {
         chore.setCreatedBy(1L); // TODO: 임시 user ID. 나중에 JWT 인증 적용해서 동적으로 변경
         chore.setCreatedAt(LocalDateTime.now());
 
-        // nextDue 계산
-        LocalDate baseDate = (request.getStartDate() != null)
-                ? request.getStartDate()
-                : (chore.getStartDate() != null ? chore.getStartDate() : LocalDate.now()); // null일 경우 오늘 날짜
+        // 시작일이 null인 경우 오늘로 설정
+        LocalDate startDate = (request.getStartDate() != null) ? request.getStartDate() : LocalDate.now();
+        chore.setStartDate(startDate);
 
-        chore.setStartDate(baseDate); // null일 경우를 포함해 startDate 설정
+        // chore 생성 시 nextDue는 시작일로 설정
+        chore.setNextDue(startDate);
 
-        if (chore.getCycleDays() != null) {
-            if (baseDate.isBefore(LocalDate.now())) { // 시작일이 과거인 경우 startDate + cycleDays
-                chore.setNextDue(baseDate.plusDays(chore.getCycleDays()));
-            } else { // 시작일이 오늘 이후인 경우 startDate
-                chore.setNextDue(baseDate);
-            }
+        // reminderDate 계산
+        if (chore.getReminderDays() != null) {
+            LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
+            // reminderDate가 오늘 이전인 경우 오늘로 설정
+            chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
         }
 
         return choreRepository.save(chore);
@@ -64,7 +63,9 @@ public class ChoreService {
                         c.getTitle(),
                         c.getCycleDays(),
                         c.getNextDue(),
-                        c.getReminderEnabled()
+                        c.getReminderEnabled(),
+                        c.getReminderDays(),
+                        c.getReminderDate()
                 ))
                 .collect(Collectors.toList());
     }
@@ -99,17 +100,18 @@ public class ChoreService {
             chore.setCycleDays(request.getCycleDays());
         }
 
-        // nextDue 재계산 (cycleDays 변경 시 or startDate 변경 시)
-        LocalDate baseDate = (request.getStartDate() != null)
-                ? request.getStartDate()
-                : chore.getStartDate();
+        // 시작일이 null인 경우 오늘로 설정
+        LocalDate startDate = (chore.getStartDate() != null) ? chore.getStartDate() : LocalDate.now();
+        chore.setStartDate(startDate);
 
-        if (chore.getCycleDays() != null) {
-            if (baseDate.isBefore(LocalDate.now())) { // 시작일이 과거인 경우 startDate + cycleDays
-                chore.setNextDue(baseDate.plusDays(chore.getCycleDays()));
-            } else { // 시작일이 오늘 이후인 경우 startDate
-                chore.setNextDue(baseDate);
-            }
+        // chore 수정 시 nextDue는 시작일로 설정
+        chore.setNextDue(startDate);
+
+        // reminderDate 재계산 (reminderDays 변경 시)
+        if (chore.getReminderDays() != null) {
+            LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
+            // reminderDate가 오늘 이전인 경우 오늘로 설정
+            chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
         }
 
 

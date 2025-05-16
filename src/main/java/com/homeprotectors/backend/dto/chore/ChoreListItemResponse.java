@@ -3,6 +3,7 @@ package com.homeprotectors.backend.dto.chore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -27,4 +28,10 @@ public class ChoreListItemResponse {
 
     @Schema(description = "enable reminder option")
     private Boolean reminderEnabled;
+
+    @Schema(description = "days before due date to trigger reminder")
+    private Integer reminderDays;
+
+    @Schema(description = "next reminder date")
+    private LocalDate reminderDate;
 }

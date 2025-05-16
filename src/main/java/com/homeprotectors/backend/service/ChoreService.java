@@ -51,6 +51,13 @@ public class ChoreService {
             }
         }
 
+        // reminderDate 계산
+        if (chore.getReminderDays() != null) {
+            LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
+            // reminderDate가 오늘 이전인 경우 오늘로 설정
+            chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
+        }
+
         return choreRepository.save(chore);
     }
 
@@ -64,7 +71,9 @@ public class ChoreService {
                         c.getTitle(),
                         c.getCycleDays(),
                         c.getNextDue(),
-                        c.getReminderEnabled()
+                        c.getReminderEnabled(),
+                        c.getReminderDays(),
+                        c.getReminderDate()
                 ))
                 .collect(Collectors.toList());
     }
@@ -110,6 +119,13 @@ public class ChoreService {
             } else { // 시작일이 오늘 이후인 경우 startDate
                 chore.setNextDue(baseDate);
             }
+        }
+
+        // reminderDate 재계산 (reminderDays 변경 시)
+        if (chore.getReminderDays() != null) {
+            LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
+            // reminderDate가 오늘 이전인 경우 오늘로 설정
+            chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
         }
 
 

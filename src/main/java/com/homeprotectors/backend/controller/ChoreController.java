@@ -33,8 +33,10 @@ public class ChoreController {
                 chore.getTitle(),
                 chore.getStartDate(),
                 chore.getCycleDays(),
+                chore.getNextDue(),
                 chore.getReminderEnabled(),
-                chore.getReminderDays()
+                chore.getReminderDays(),
+                chore.getReminderDate()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -61,8 +63,10 @@ public class ChoreController {
                 updated.getTitle(),
                 updated.getStartDate(),
                 updated.getCycleDays(),
+                updated.getNextDue(),
                 updated.getReminderEnabled(),
-                updated.getReminderDays()
+                updated.getReminderDays(),
+                updated.getReminderDate()
         );
 
         return ResponseEntity.ok(new ResponseDTO<>(true, "Chore updated successfully", response));

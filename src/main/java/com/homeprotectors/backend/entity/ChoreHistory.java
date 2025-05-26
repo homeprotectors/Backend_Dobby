@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,7 +32,10 @@ public class ChoreHistory {
 
     private LocalDate doneDate;       // 실제 완료한 날짜 (완료한 경우만)
 
-    private Boolean isDone = false;   // 완료 여부
+    private Boolean isDone = false;
+
+    @Column(nullable = false)
+    private Long doneBy; // 완료한 사람
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

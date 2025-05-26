@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.*;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,5 +20,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(new ResponseDTO<>(false, errorMessage, null));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ResponseDTO<Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity
+                .badRequest()
+                .body(new ResponseDTO<>(false, ex.getMessage(), null));
     }
 }

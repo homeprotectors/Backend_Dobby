@@ -1,9 +1,6 @@
 package com.homeprotectors.backend.controller;
 
-import com.homeprotectors.backend.dto.chore.ChoreCreateRequest;
-import com.homeprotectors.backend.dto.chore.ChoreCreateResponse;
-import com.homeprotectors.backend.dto.chore.ChoreEditRequest;
-import com.homeprotectors.backend.dto.chore.ChoreListItemResponse;
+import com.homeprotectors.backend.dto.chore.*;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.service.ChoreService;
@@ -78,6 +75,16 @@ public class ChoreController {
         choreService.deleteChore(choreId);
         return ResponseEntity.noContent().build(); // 204 No Content
     }
+
+    @Operation(summary = "chore 완료", description = "Mark a chore as completed and update the next due date")
+    @PostMapping("/complete")
+    public ResponseEntity<ResponseDTO<ChoreCompleteResponse>> completeChore(
+            @Valid @RequestBody ChoreCompleteRequest request) {
+        ChoreCompleteResponse response = choreService.completeChore(request);
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Chore completed successfully", response));
+    }
+
+
 
 
 

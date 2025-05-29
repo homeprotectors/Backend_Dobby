@@ -85,7 +85,12 @@ public class ChoreController {
     }
 
 
-
-
+    @Operation(summary = "chore 완료 취소", description = "Undo the completion of a chore")
+    @PostMapping("/undo")
+    public ResponseEntity<ResponseDTO<ChoreUndoResponse>> undoChoreCompletion(
+            @Valid @RequestBody ChoreUndoRequest request) {
+        ChoreUndoResponse response = choreService.undoChoreCompletion(request);
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Chore completion undone successfully", response));
+    }
 
 }

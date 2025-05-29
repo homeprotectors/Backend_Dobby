@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.exception;
 
 import com.homeprotectors.backend.dto.common.ResponseDTO;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ResponseDTO<Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity
                 .badRequest()
+                .body(new ResponseDTO<>(false, ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ResponseDTO<Object>> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return ResponseEntity
+                .status(404)
                 .body(new ResponseDTO<>(false, ex.getMessage(), null));
     }
 }

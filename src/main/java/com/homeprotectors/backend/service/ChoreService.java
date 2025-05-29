@@ -11,12 +11,12 @@ import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Data
@@ -181,6 +181,63 @@ public class ChoreService {
                 1L // TODO: JWT 적용 후 대체
         );
     }
+
+    public ChoreUndoResponse undoChoreCompletion(ChoreUndoRequest request) {
+        Long userId = 1L; // TODO: JWT 적용 후 대체
+        LocalDate today = LocalDate.now();
+
+        Chore chore = choreRepository.findById(request.getChoreId())
+                .orElseThrow(() -> new EntityNotFoundException("해당 Chore를 찾을 수 없습니다."));
+
+        // 14일 이내만 취소 허용
+        if (request.getDoneDate().isBefore(today.minusDays(14))) {
+            throw new IllegalArgumentException("14일 이전 완료 기록은 취소할 수 없습니다.");
+        }
+
+        // 해당 날짜의 히스토리 조회
+        ChoreHistory targetHistory = choreHistoryRepository
+                .findByChoreIdAndDoneDate(request.getChoreId(), request.getDoneDate())
+                .orElseThrow(() -> new EntityNotFoundException("해당 날짜의 완료 기록이 없습니다."));
+
+        choreHistoryRepository.delete(targetHistory);
+
+        // 삭제한 날짜가 chore.lastDone과 같으면, 다시 계산 필요
+        if (chore.getLastDone() != null && chore.getLastDone().equals(request.getDoneDate())) {
+            // 남아 있는 히스토리 중 가장 최근 doneDate 찾기
+            Optional<ChoreHistory> latestHistoryOpt = choreHistoryRepository
+                    .findTopByChoreIdAndIsDoneTrueOrderByDoneDateDesc(chore.getId());
+
+            if (latestHistoryOpt.isPresent()) {
+                LocalDate latestDoneDate = latestHistoryOpt.get().getDoneDate();
+                chore.setLastDone(latestDoneDate);
+
+                // nextDue, reminderDate 재계산 - 오늘 이전이면 오늘로 설정
+                LocalDate newNextDue = latestDoneDate.plusDays(chore.getCycleDays());
+                chore.setNextDue(newNextDue.isBefore(today) ? today : newNextDue);
+
+                if (chore.getReminderDays() != null) {
+                    LocalDate newReminderDate = newNextDue.minusDays(chore.getReminderDays());
+                    chore.setReminderDate(newReminderDate.isBefore(today) ? today : newReminderDate);
+                } else {
+                    chore.setReminderDate(null);
+                }
+            } else {
+                // 기록이 하나도 없다면 초기 상태로
+                chore.setLastDone(null);
+                chore.setNextDue(today);
+                chore.setReminderDate(null);
+            }
+
+            choreRepository.save(chore);
+        }
+        return new ChoreUndoResponse(
+                chore.getId(),
+                chore.getNextDue(),
+                chore.getReminderDate(),
+                chore.getLastDone()
+        );
+    }
+
 
 
 }

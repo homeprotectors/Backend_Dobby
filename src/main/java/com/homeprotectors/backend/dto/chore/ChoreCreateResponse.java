@@ -18,7 +18,6 @@ public class ChoreCreateResponse {
     private LocalDate startDate;
     private Integer cycleDays;
     private LocalDate NextDue;
-    private Boolean reminderEnabled;
     private Integer reminderDays;
     private LocalDate reminderDate;
 }

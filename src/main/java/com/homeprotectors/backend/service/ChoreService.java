@@ -33,7 +33,6 @@ public class ChoreService {
         chore.setGroupId(1L); // TODO: 임시 group ID
         chore.setTitle(request.getTitle());
         chore.setCycleDays(request.getCycleDays());
-        chore.setReminderEnabled(request.getReminderEnabled());
         chore.setReminderDays(request.getReminderDays());
         chore.setCreatedBy(1L); // TODO: 임시 user ID. 나중에 JWT 인증 적용해서 동적으로 변경
         chore.setCreatedAt(LocalDateTime.now());
@@ -65,7 +64,6 @@ public class ChoreService {
                         c.getTitle(),
                         c.getCycleDays(),
                         c.getNextDue(),
-                        c.getReminderEnabled(),
                         c.getReminderDays(),
                         c.getReminderDate()
                 ))
@@ -84,9 +82,6 @@ public class ChoreService {
         }
         if (request.getStartDate() != null) {
             chore.setStartDate(request.getStartDate());
-        }
-        if (request.getReminderEnabled() != null) {
-            chore.setReminderEnabled(request.getReminderEnabled());
         }
         if (request.getReminderDays() != null) {
             chore.setReminderDays(request.getReminderDays());

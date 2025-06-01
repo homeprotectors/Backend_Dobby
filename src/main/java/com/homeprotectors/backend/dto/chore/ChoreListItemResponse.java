@@ -26,9 +26,6 @@ public class ChoreListItemResponse {
     @Schema(description = "next due date")
     private LocalDate nextDue;
 
-    @Schema(description = "enable reminder option")
-    private Boolean reminderEnabled;
-
     @Schema(description = "days before due date to trigger reminder")
     private Integer reminderDays;
 

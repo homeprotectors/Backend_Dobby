@@ -26,8 +26,6 @@ public class ChoreCreateRequest {
     @FutureOrPresent(message = "시작일은 오늘 이후여야 합니다.")
     private LocalDate startDate;
 
-    private Boolean reminderEnabled;
-
     @Min(value = 0, message = "미리 알림 일수는 0일 이상 입력해주세요.")
     private Integer reminderDays; // optional
 }

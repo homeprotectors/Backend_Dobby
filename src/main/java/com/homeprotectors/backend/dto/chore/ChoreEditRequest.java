@@ -27,9 +27,6 @@ public class ChoreEditRequest {
     @Schema(description = "Start date to calculate next due date", example = "2025-05-10")
     private LocalDate startDate;
 
-    @Schema(description = "Whether reminder is enabled", example = "true")
-    private Boolean reminderEnabled;
-
     @Schema(description = "Number of days before due date to trigger reminder", example = "1")
     @Min(value = 0, message = "미리 알림 일수는 0일 이상 입력해주세요.")
     private Integer reminderDays;

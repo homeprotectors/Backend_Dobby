@@ -24,9 +24,6 @@ public class ChoreEditRequest {
     @Max(value = 365, message = "반복 주기는 365일 이하여야 합니다.")
     private Integer cycleDays;
 
-    @Schema(description = "Start date to calculate next due date", example = "2025-05-10")
-    private LocalDate startDate;
-
     @Schema(description = "Number of days before due date to trigger reminder", example = "1")
     @Min(value = 0, message = "미리 알림 일수는 0일 이상 입력해주세요.")
     private Integer reminderDays;

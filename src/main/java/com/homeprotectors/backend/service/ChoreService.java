@@ -80,18 +80,7 @@ public class ChoreService {
         if (request.getCycleDays() != null) {
             chore.setCycleDays(request.getCycleDays());
         }
-        if (request.getStartDate() != null) {
-            chore.setStartDate(request.getStartDate());
-        }
-        if (request.getReminderDays() != null) {
-            chore.setReminderDays(request.getReminderDays());
-        }
-
-        if (request.getStartDate() != null) {
-            chore.setStartDate(request.getStartDate());
-        } else if (chore.getStartDate() == null) {
-            chore.setStartDate(LocalDate.now());
-        }
+        chore.setReminderDays(request.getReminderDays());
 
         if (request.getCycleDays() != null) {
             chore.setCycleDays(request.getCycleDays());
@@ -101,14 +90,25 @@ public class ChoreService {
         LocalDate startDate = (chore.getStartDate() != null) ? chore.getStartDate() : LocalDate.now();
         chore.setStartDate(startDate);
 
-        // chore 수정 시 nextDue는 시작일로 설정
-        chore.setNextDue(startDate);
+        // cycleDays가 변경되면 nextDue 재계산 - lastDone + cycleDays / lastDone이 없을 경우 startDate / 오늘 이전인 경우 오늘로 설정
+        if (chore.getLastDone() != null) {
+            LocalDate newNextDue = chore.getLastDone().plusDays(chore.getCycleDays());
+            chore.setNextDue(newNextDue.isBefore(LocalDate.now()) ? LocalDate.now() : newNextDue);
+        } else { // lastDone이 없을 경우
+            if (startDate.isAfter(LocalDate.now())) { // 시작일이 오늘 이후면 nextDue를 시작일로 설정
+                chore.setNextDue(startDate);
+            } else { // 시작일이 오늘 이전이면 nextDue를 오늘로 설정
+                chore.setNextDue(LocalDate.now());
+            }
+        }
 
         // reminderDate 재계산 (reminderDays 변경 시)
         if (chore.getReminderDays() != null) {
             LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
             // reminderDate가 오늘 이전인 경우 오늘로 설정
             chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
+        } else {
+            chore.setReminderDate(null); // reminderDays가 null인 경우 reminderDate는 null로 설정
         }
 
 

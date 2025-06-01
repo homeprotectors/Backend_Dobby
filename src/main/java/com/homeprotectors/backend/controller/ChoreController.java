@@ -31,7 +31,6 @@ public class ChoreController {
                 chore.getStartDate(),
                 chore.getCycleDays(),
                 chore.getNextDue(),
-                chore.getReminderEnabled(),
                 chore.getReminderDays(),
                 chore.getReminderDate()
         );
@@ -61,7 +60,6 @@ public class ChoreController {
                 updated.getStartDate(),
                 updated.getCycleDays(),
                 updated.getNextDue(),
-                updated.getReminderEnabled(),
                 updated.getReminderDays(),
                 updated.getReminderDate()
         );

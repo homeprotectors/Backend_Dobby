@@ -26,9 +26,6 @@ public class Chore {
     private LocalDate lastDone;
     private LocalDate nextDue;
     private LocalDate reminderDate;
-    @Setter
-    @Getter
-    private Boolean reminderEnabled = true;
     private Integer reminderDays;
 
     @Column(nullable = false)

@@ -139,7 +139,6 @@ public class ChoreService {
         ChoreHistory history = new ChoreHistory();
         history.setChore(chore);
         history.setDoneDate(doneDate);
-        history.setIsDone(true);
         history.setDoneBy(1L); // TODO: JWT 적용 후 대체
         history.setCreatedAt(LocalDateTime.now());
 
@@ -200,7 +199,7 @@ public class ChoreService {
         if (chore.getLastDone() != null && chore.getLastDone().equals(request.getDoneDate())) {
             // 남아 있는 히스토리 중 가장 최근 doneDate 찾기
             Optional<ChoreHistory> latestHistoryOpt = choreHistoryRepository
-                    .findTopByChoreIdAndIsDoneTrueOrderByDoneDateDesc(chore.getId());
+                    .findTopByChoreIdOrderByDoneDateDesc(chore.getId());
 
             if (latestHistoryOpt.isPresent()) {
                 LocalDate latestDoneDate = latestHistoryOpt.get().getDoneDate();
@@ -231,6 +230,23 @@ public class ChoreService {
                 chore.getReminderDate(),
                 chore.getLastDone()
         );
+    }
+
+    public List<ChoreHistoryItemResponse> getChoreHistory(Long choreId) {
+        List<ChoreHistory> histories = choreHistoryRepository.findByChoreId(choreId);
+        if (histories.isEmpty()) {
+            throw new EntityNotFoundException("해당 Chore의 히스토리가 없습니다.");
+        }
+
+        return histories.stream()
+                .map(history -> new ChoreHistoryItemResponse(
+                        history.getId(),
+                        history.getDoneDate(),
+                        history.getScheduledDate(),
+                        history.getDoneBy()
+                ))
+                .collect(Collectors.toList());
+
     }
 
 

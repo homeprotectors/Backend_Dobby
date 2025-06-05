@@ -32,8 +32,6 @@ public class ChoreHistory {
 
     private LocalDate doneDate;       // 실제 완료한 날짜 (완료한 경우만)
 
-    private Boolean isDone = false;
-
     @Column(nullable = false)
     private Long doneBy; // 완료한 사람
 

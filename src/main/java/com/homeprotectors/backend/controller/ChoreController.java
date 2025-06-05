@@ -6,6 +6,7 @@ import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.service.ChoreService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -90,5 +91,12 @@ public class ChoreController {
         ChoreUndoResponse response = choreService.undoChoreCompletion(request);
         return ResponseEntity.ok(new ResponseDTO<>(true, "Chore completion undone successfully", response));
     }
+
+    @Operation(summary = "chore history 조회", description = "Retrieve history records of a specific chore by ID")
+    @GetMapping("/{choreId}/history")
+    public ResponseDTO<List<ChoreHistoryItemResponse>> getChoreHistory(@PathVariable Long choreId) {
+        List<ChoreHistoryItemResponse> history = choreService.getChoreHistory(choreId);
+        return new ResponseDTO<>(true, "Chore history retrieved", history);
+        }
 
 }

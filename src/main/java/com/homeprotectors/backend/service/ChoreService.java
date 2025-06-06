@@ -135,6 +135,11 @@ public class ChoreService {
             throw new IllegalArgumentException("완료 날짜는 오늘로부터 과거 14일 이내여야 합니다.");
         }
 
+        // 이미 해당 날짜에 완료 기록이 있는지 확인
+        if (choreHistoryRepository.existsByChoreIdAndDoneDate(chore.getId(), doneDate)) {
+            throw new IllegalArgumentException("이미 해당 날짜에 완료 기록이 존재합니다.");
+        }
+
         // 히스토리 기록
         ChoreHistory history = new ChoreHistory();
         history.setChore(chore);
@@ -233,19 +238,31 @@ public class ChoreService {
     }
 
     public List<ChoreHistoryItemResponse> getChoreHistory(Long choreId) {
-        List<ChoreHistory> histories = choreHistoryRepository.findByChoreId(choreId);
+        List<ChoreHistory> histories = choreHistoryRepository.findByChoreIdOrderByDoneDateDesc(choreId);
         if (histories.isEmpty()) {
             throw new EntityNotFoundException("해당 Chore의 히스토리가 없습니다.");
         }
+        Chore chore = choreRepository.findById(choreId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 Chore를 찾을 수 없습니다."));
 
+        // 응답으로 choreId, nextDue, history 리스트(다수) 반환
         return histories.stream()
-                .map(history -> new ChoreHistoryItemResponse(
-                        history.getId(),
-                        history.getDoneDate(),
-                        history.getScheduledDate(),
-                        history.getDoneBy()
+                .map(h -> new ChoreHistoryItemResponse.ChoreHistoryListResponse(
+                        h.getId(),
+                        h.getDoneDate(),
+                        h.getDoneBy()
                 ))
-                .collect(Collectors.toList());
+                .collect(Collectors.groupingBy(
+                        h -> choreId,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                historyList -> new ChoreHistoryItemResponse(
+                                        choreId,
+                                        chore.getNextDue(),
+                                        historyList
+                                )
+                        )
+                )).values().stream().collect(Collectors.toList());
 
     }
 

@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface ChoreHistoryRepository extends JpaRepository<ChoreHistory, Long> {
     List<ChoreHistory> findByChoreId(Long choreId);
     Optional<ChoreHistory> findByChoreIdAndDoneDate(Long choreId, LocalDate doneDate);
-    Optional<ChoreHistory> findTopByChoreIdAndIsDoneTrueOrderByDoneDateDesc(Long choreId);
-
+    Optional<ChoreHistory> findTopByChoreIdOrderByDoneDateDesc(Long choreId);
+    List<ChoreHistory> findByChoreIdOrderByDoneDateDesc(Long choreId);
+    boolean existsByChoreIdAndDoneDate(Long id, LocalDate doneDate);
 }

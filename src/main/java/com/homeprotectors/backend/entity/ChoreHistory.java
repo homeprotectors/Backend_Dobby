@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.Id;
+import org.hibernate.validator.constraints.UniqueElements;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,8 +32,6 @@ public class ChoreHistory {
     private LocalDate scheduledDate; // 예정 추천일
 
     private LocalDate doneDate;       // 실제 완료한 날짜 (완료한 경우만)
-
-    private Boolean isDone = false;
 
     @Column(nullable = false)
     private Long doneBy; // 완료한 사람

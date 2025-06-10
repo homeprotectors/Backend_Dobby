@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.chore.*;
+import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.entity.ChoreHistory;
 import com.homeprotectors.backend.repository.ChoreHistoryRepository;
@@ -237,32 +238,28 @@ public class ChoreService {
         );
     }
 
-    public List<ChoreHistoryItemResponse> getChoreHistory(Long choreId) {
+    public ChoreHistoryItemResponse getChoreHistory(Long choreId) {
         List<ChoreHistory> histories = choreHistoryRepository.findByChoreIdOrderByDoneDateDesc(choreId);
         if (histories.isEmpty()) {
-            throw new EntityNotFoundException("해당 Chore의 히스토리가 없습니다.");
+            // success, "no history found" 메시지와 함께 빈 리스트 반환
+            return new ResponseDTO<>(true, "해당 Chore의 히스토리가 없습니다.", new ChoreHistoryItemResponse(choreId, null, List.of())).getData();
+
         }
         Chore chore = choreRepository.findById(choreId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 Chore를 찾을 수 없습니다."));
 
-        // 응답으로 choreId, nextDue, history 리스트(다수) 반환
-        return histories.stream()
-                .map(h -> new ChoreHistoryItemResponse.ChoreHistoryListResponse(
-                        h.getId(),
-                        h.getDoneDate(),
-                        h.getDoneBy()
-                ))
-                .collect(Collectors.groupingBy(
-                        h -> choreId,
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                historyList -> new ChoreHistoryItemResponse(
-                                        choreId,
-                                        chore.getNextDue(),
-                                        historyList
-                                )
-                        )
-                )).values().stream().collect(Collectors.toList());
+        // 응답으로 choreId, nextDue, history 리스트 반환
+        return new ChoreHistoryItemResponse(
+                choreId,
+                chore.getNextDue(),
+                histories.stream()
+                        .map(h -> new ChoreHistoryItemResponse.ChoreHistoryListResponse(
+                                h.getId(),
+                                h.getDoneDate(),
+                                h.getDoneBy()
+                        ))
+                        .collect(Collectors.toList())
+        );
 
     }
 

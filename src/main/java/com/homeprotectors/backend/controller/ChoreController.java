@@ -94,9 +94,12 @@ public class ChoreController {
 
     @Operation(summary = "chore history 조회", description = "Retrieve history records of a specific chore by ID")
     @GetMapping("/{choreId}/history")
-    public ResponseDTO<List<ChoreHistoryItemResponse>> getChoreHistory(@PathVariable Long choreId) {
-        List<ChoreHistoryItemResponse> history = choreService.getChoreHistory(choreId);
-        return new ResponseDTO<>(true, "Chore history retrieved", history);
+    public ResponseDTO<ChoreHistoryItemResponse> getChoreHistory(@PathVariable Long choreId) {
+        ChoreHistoryItemResponse history = choreService.getChoreHistory(choreId);
+        if (history.getHistory().isEmpty()) {
+            return new ResponseDTO<>(true, "No history records found for this chore", history);
         }
+        return new ResponseDTO<>(true, "Chore history retrieved", history);
+    }
 
 }

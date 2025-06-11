@@ -240,11 +240,7 @@ public class ChoreService {
 
     public ChoreHistoryItemResponse getChoreHistory(Long choreId) {
         List<ChoreHistory> histories = choreHistoryRepository.findByChoreIdOrderByDoneDateDesc(choreId);
-        if (histories.isEmpty()) {
-            // success, "no history found" 메시지와 함께 빈 리스트 반환
-            return new ResponseDTO<>(true, "해당 Chore의 히스토리가 없습니다.", new ChoreHistoryItemResponse(choreId, null, List.of())).getData();
 
-        }
         Chore chore = choreRepository.findById(choreId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 Chore를 찾을 수 없습니다."));
 

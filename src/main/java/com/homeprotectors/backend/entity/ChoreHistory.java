@@ -24,7 +24,7 @@ public class ChoreHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "chore_id", nullable = false)
     private Chore chore;
 

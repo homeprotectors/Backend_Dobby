@@ -34,6 +34,9 @@ public class Chore {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @OneToMany(mappedBy = "chore", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<ChoreHistory> choreHistories = new java.util.ArrayList<>();
+
 //  com.homeprotectors.backend.entity.Group Entity 우선 주석처리 - 향후 기능 확장
 //    @ManyToOne
 //    @JoinColumn(name = "group_id")

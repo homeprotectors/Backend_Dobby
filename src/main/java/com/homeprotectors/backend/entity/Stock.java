@@ -28,14 +28,14 @@ public class Stock {
     @Column(nullable = false)
     @Min(value = 0, message = "재고 수량은 0 이상이어야 합니다.")
     @Max(value = 1000, message = "재고 수량은 1000 이하이어야 합니다.")
-    private Integer quantity; // 재고 수량
+    private Integer unitQuantity; // 재고 수량
 
     @Column(nullable = false)
     private String unit; // 재고 단위 (예: 병, 개, 박스 등)
 
-    @Column(name = "estimated_consumption_days", nullable = false)
+    @Column(name = "unit_days", nullable = false)
     @Min(value = 1, message = "예상 소진 일수는 1일 이상이어야 합니다.")
-    private Integer estimatedConsumptionDays; // 예상 소진 일수
+    private Integer unitDays; // 예상 소진 일수
 
     @Column(name = "next_due")
     private LocalDate nextDue; // 다음 소진 예정일

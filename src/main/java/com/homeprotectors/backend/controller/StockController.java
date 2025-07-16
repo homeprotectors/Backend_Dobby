@@ -1,8 +1,10 @@
 package com.homeprotectors.backend.controller;
 
+import com.homeprotectors.backend.dto.chore.ChoreListItemResponse;
 import com.homeprotectors.backend.dto.stock.StockCreateRequest;
 import com.homeprotectors.backend.dto.stock.StockCreateResponse;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
+import com.homeprotectors.backend.dto.stock.StockListItemResponse;
 import com.homeprotectors.backend.entity.Stock;
 import com.homeprotectors.backend.service.StockService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,10 +12,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,9 +31,9 @@ public class StockController {
         StockCreateResponse response = new StockCreateResponse(
                 stock.getId(),
                 stock.getName(),
-                stock.getQuantity(  ),
+                stock.getUnitQuantity(),
                 stock.getUnit(),
-                stock.getEstimatedConsumptionDays(),
+                stock.getUnitDays(),
                 stock.getNextDue(),
                 stock.getReminderDays(),
                 stock.getReminderDate()
@@ -41,4 +42,12 @@ public class StockController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseDTO<>(true, "Stock created successfully", response));
     }
+
+    @Operation(summary = "Stock 목록 조회", description = "Retrieve the list of stocks in the group that the user belongs to")
+    @GetMapping
+    public ResponseDTO<List<StockListItemResponse>> getStockList() {
+        List<StockListItemResponse> stocks = stockService.getStockList();  // 인증 기반 그룹 필터링 가정
+        return new ResponseDTO<>(true, "Chore list retrieved", stocks);
+    }
+
 }

@@ -28,4 +28,7 @@ public class StockCreateRequest {
     @Schema(description = "미리 알림 일수 (일 단위)", example = "2")
     private Integer reminderDays;
 
+    @Schema(description = "재고", example = "3")
+    private Integer currentQuantity;
+
 }

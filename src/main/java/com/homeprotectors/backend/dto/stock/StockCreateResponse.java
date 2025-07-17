@@ -27,12 +27,12 @@ public class StockCreateResponse {
     @Schema(description = "소비 주기 (일 단위)", example = "7")
     private Integer unitDays;
 
+    @Schema(description = "현재 재고 수량", example = "3")
+    private Integer currentQuantity;
+
     @Schema(description = "다음 소비 예정일")
     private LocalDate nextDue;
 
     @Schema(description = "미리 알림 일수 (일 단위)", example = "2")
     private Integer reminderDays;
-
-    @Schema(description = "미리 알림 날짜")
-    private LocalDate reminderDate;
 }

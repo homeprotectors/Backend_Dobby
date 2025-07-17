@@ -3,6 +3,7 @@ package com.homeprotectors.backend.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.UniqueElements;
 
@@ -26,14 +27,17 @@ public class Stock {
 
     // 0 이상, 1000 이하의 수량을 허용
     @Column(nullable = false)
-    @Min(value = 0, message = "재고 수량은 0 이상이어야 합니다.")
-    @Max(value = 1000, message = "재고 수량은 1000 이하이어야 합니다.")
-    private Integer unitQuantity; // 재고 수량
+    @NotNull
+    @Min(value = 0, message = "단위 수량은 0 이상이어야 합니다.")
+    @Max(value = 1000, message = "단위 수량은 1000 이하이어야 합니다.")
+    private Integer unitQuantity; // 단위 수량
 
     @Column(nullable = false)
+    @NotNull
     private String unit; // 재고 단위 (예: 병, 개, 박스 등)
 
     @Column(name = "unit_days", nullable = false)
+    @NotNull
     @Min(value = 1, message = "예상 소진 일수는 1일 이상이어야 합니다.")
     private Integer unitDays; // 예상 소진 일수
 
@@ -41,12 +45,14 @@ public class Stock {
     private LocalDate nextDue; // 다음 소진 예정일
 
     @Column(name = "created_by", nullable = false)
+    @NotNull
     private Long createdBy; // 생성자 ID
 
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated = LocalDateTime.now(); // 마지막 업데이트 시간
 
     @Column(name = "created_at", nullable = false)
+    @NotNull
     private LocalDateTime createdAt = LocalDateTime.now(); // 생성 시간
 
     @Column(name = "reminder_date")
@@ -55,6 +61,11 @@ public class Stock {
     @Column(name = "reminder_days")
     @Min(value = 0, message = "미리 알림 일수는 0일 이상이어야 합니다.")
     private Integer reminderDays; // 미리 알림 일수 (0일 이상)
+
+    @Column(name = "current_quantity", nullable = false)
+    @NotNull
+    @Min(value = 0, message = "현재 재고 수량은 0 이상이어야 합니다.")
+    private Integer currentQuantity; // 현재 재고 수량
 
     @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<StockHistory> stockHistories = new java.util.ArrayList<>(); // 재고 이력

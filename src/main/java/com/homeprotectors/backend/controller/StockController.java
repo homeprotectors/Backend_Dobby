@@ -34,9 +34,9 @@ public class StockController {
                 stock.getUnitQuantity(),
                 stock.getUnit(),
                 stock.getUnitDays(),
+                stock.getCurrentQuantity(),
                 stock.getNextDue(),
-                stock.getReminderDays(),
-                stock.getReminderDate()
+                stock.getReminderDays()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)

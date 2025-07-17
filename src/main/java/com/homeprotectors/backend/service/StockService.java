@@ -34,9 +34,18 @@ public class StockService {
         stock.setUnit(request.getUnit());
         stock.setUnitDays(request.getUnitDays());
         stock.setReminderDays(request.getReminderDays());
+        stock.setCurrentQuantity(request.getCurrentQuantity());
 
         // nextDue 계산 로직
-        stock.setNextDue(LocalDate.now().plusDays(request.getUnitDays()));
+        // unitQuantity 개에 unitDays 일 & currentQuantity 따로 입력해서 계산
+        // 예: 3개에 7일 & 현재수량: 5개 -> 오늘 + (1개당 2.3일 * 5개) -> 12일 (올림) -> 7/27
+        if (request.getUnitDays() != null && request.getUnitQuantity() != null && request.getCurrentQuantity() != null) {
+            double daysPerUnit = (double) request.getUnitDays() / request.getUnitQuantity();
+            double totalDays = daysPerUnit * request.getCurrentQuantity();
+            stock.setNextDue(LocalDate.now().plusDays((long) Math.ceil(totalDays)));
+        } else {
+            stock.setNextDue(LocalDate.now()); // 기본값으로 오늘 날짜 설정
+        }
 
         // 현재 시간으로 lastUpdated 설정
         stock.setLastUpdated(LocalDateTime.now());

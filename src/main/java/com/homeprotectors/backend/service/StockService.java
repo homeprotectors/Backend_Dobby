@@ -79,4 +79,53 @@ public class StockService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public Stock editStock(Long stockId, StockCreateRequest request) {
+        Stock stock = stockRepository.findById(stockId)
+                .orElseThrow(() -> new IllegalArgumentException("Stock not found"));
+
+        // 값이 넘어온 것들만 업데이트- 없으면 기존 값 유지
+        if (request.getName() != null) {
+            stock.setName(request.getName());
+        }
+        if (request.getUnitQuantity() != null) {
+            stock.setUnitQuantity(request.getUnitQuantity());
+        }
+        if (request.getUnit() != null) {
+            stock.setUnit(request.getUnit());
+        }
+        if (request.getUnitDays() != null) {
+            stock.setUnitDays(request.getUnitDays());
+        }
+        if (request.getCurrentQuantity() != null) {
+            stock.setCurrentQuantity(request.getCurrentQuantity());
+        }
+
+        // nextDue 재계산 로직 - 재고의 수량에 따라 다음 소진 예정일을 업데이트
+        // unitQuantity 개에 unitDays 일 & currentQuantity 따로 입력해서 계산
+        // 3개 중 새로운 입력값이 없는 값은 해당 값은 기존 입력값을 사용해서 계산
+        Integer unitDays = (request.getUnitDays() != null) ? request.getUnitDays() : stock.getUnitDays();
+        Integer unitQuantity = (request.getUnitQuantity() != null) ? request.getUnitQuantity() : stock.getUnitQuantity();
+        Integer currentQuantity = (request.getCurrentQuantity() != null) ? request.getCurrentQuantity() : stock.getCurrentQuantity();
+
+        if (unitDays != null && unitQuantity != null && currentQuantity != null) {
+            double daysPerUnit = (double) unitDays / unitQuantity;
+            double totalDays = daysPerUnit * currentQuantity;
+            stock.setNextDue(LocalDate.now().plusDays((long) Math.ceil(totalDays)));
+        } else {
+            stock.setNextDue(LocalDate.now()); // 기본값으로 오늘 날짜 설정
+        }
+
+        // 현재 시간으로 lastUpdated 설정
+        stock.setLastUpdated(LocalDateTime.now());
+
+        // reminderDate 계산
+        if (request.getReminderDays() != null) {
+            stock.setReminderDate(stock.getNextDue().minusDays(request.getReminderDays()));
+        } else {
+            stock.setReminderDate(null); // 미리 알림이 설정되지 않은 경우
+        }
+
+        return stockRepository.save(stock);
+    }
 }

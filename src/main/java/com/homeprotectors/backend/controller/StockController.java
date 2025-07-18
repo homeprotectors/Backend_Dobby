@@ -50,4 +50,26 @@ public class StockController {
         return new ResponseDTO<>(true, "Chore list retrieved", stocks);
     }
 
+    @Operation(summary = "Stock 수정", description = "Edit an existing stock")
+    @PutMapping("/{id}")
+    public ResponseEntity<ResponseDTO<StockCreateResponse>> editStock(
+            @PathVariable Long id,
+            @Valid @RequestBody StockCreateRequest request) {
+
+        Stock updated = stockService.editStock(id, request);
+
+        StockCreateResponse response = new StockCreateResponse(
+                updated.getId(),
+                updated.getName(),
+                updated.getUnitQuantity(),
+                updated.getUnit(),
+                updated.getUnitDays(),
+                updated.getCurrentQuantity(),
+                updated.getNextDue(),
+                updated.getReminderDays()
+        );
+
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Stock updated successfully", response));
+    }
+
 }

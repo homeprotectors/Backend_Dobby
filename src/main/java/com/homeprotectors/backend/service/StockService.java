@@ -74,6 +74,7 @@ public class StockService {
                         stock.getUnitQuantity(),
                         stock.getUnit(),
                         stock.getUnitDays(),
+                        stock.getCurrentQuantity(),
                         stock.getNextDue(),
                         stock.getReminderDays()
                 ))

@@ -28,6 +28,9 @@ public class StockListItemResponse {
     @Schema(description = "단위 당 소비 주기 (일 단위)")
     private Integer unitDays;
 
+    @Schema(description = "현재 재고 수량")
+    private Integer currentQuantity;
+
     @Schema(description = "다음 소비 예정일")
     private LocalDate nextDue;
 

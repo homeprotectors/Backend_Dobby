@@ -66,7 +66,4 @@ public class Stock {
     @NotNull
     @Min(value = 0, message = "현재 재고 수량은 0 이상이어야 합니다.")
     private Integer currentQuantity; // 현재 재고 수량
-
-    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<StockHistory> stockHistories = new java.util.ArrayList<>(); // 재고 이력
 }

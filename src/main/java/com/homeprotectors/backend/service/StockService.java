@@ -7,6 +7,7 @@ import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.entity.Stock;
 import com.homeprotectors.backend.repository.GroupRepository;
 import com.homeprotectors.backend.repository.StockRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Data
@@ -128,5 +130,13 @@ public class StockService {
         }
 
         return stockRepository.save(stock);
+    }
+
+    public void deleteStock(Long stockId) {
+        Stock stock = stockRepository.findById(stockId)
+                .orElseThrow(() -> new EntityNotFoundException("Stock not found"));
+
+        // TODO: 인증 사용자 그룹 소속 여부 확인 (JWT 인증 기반으로 구현 예정)
+        stockRepository.delete(stock);
     }
 }

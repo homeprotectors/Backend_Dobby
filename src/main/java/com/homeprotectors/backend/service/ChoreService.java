@@ -118,7 +118,7 @@ public class ChoreService {
 
     public void deleteChore(Long choreId) {
         Chore chore = choreRepository.findById(choreId)
-                .orElseThrow(() -> new NoSuchElementException("해당 chore가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 chore가 존재하지 않습니다."));
 
         // TODO: 인증 사용자 그룹 소속 여부 확인 필요 (JWT 인증 후 구현 예정)
         choreRepository.delete(chore);

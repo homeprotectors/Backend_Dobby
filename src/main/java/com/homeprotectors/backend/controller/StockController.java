@@ -51,12 +51,12 @@ public class StockController {
     }
 
     @Operation(summary = "Stock 수정", description = "Edit an existing stock")
-    @PutMapping("/{id}")
+    @PutMapping("/{stockId}")
     public ResponseEntity<ResponseDTO<StockCreateResponse>> editStock(
-            @PathVariable Long id,
+            @PathVariable Long stockId,
             @Valid @RequestBody StockCreateRequest request) {
 
-        Stock updated = stockService.editStock(id, request);
+        Stock updated = stockService.editStock(stockId, request);
 
         StockCreateResponse response = new StockCreateResponse(
                 updated.getId(),
@@ -70,6 +70,13 @@ public class StockController {
         );
 
         return ResponseEntity.ok(new ResponseDTO<>(true, "Stock updated successfully", response));
+    }
+
+    @Operation(summary = "Stock 삭제", description = "Delete an existing stock")
+    @DeleteMapping("/{stockId}")
+    public ResponseEntity<Void> deleteStock(@PathVariable Long stockId) {
+        stockService.deleteStock(stockId);
+        return ResponseEntity.noContent().build();
     }
 
 }

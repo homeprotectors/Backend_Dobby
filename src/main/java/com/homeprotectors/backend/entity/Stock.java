@@ -48,9 +48,6 @@ public class Stock {
     @NotNull
     private Long createdBy; // 생성자 ID
 
-    @Column(name = "last_updated")
-    private LocalDateTime lastUpdated = LocalDateTime.now(); // 마지막 업데이트 시간
-
     @Column(name = "created_at", nullable = false)
     @NotNull
     private LocalDateTime createdAt = LocalDateTime.now(); // 생성 시간
@@ -62,8 +59,11 @@ public class Stock {
     @Min(value = 0, message = "미리 알림 일수는 0일 이상이어야 합니다.")
     private Integer reminderDays; // 미리 알림 일수 (0일 이상)
 
-    @Column(name = "current_quantity", nullable = false)
+    @Column(name = "updated_quantity", nullable = false)
     @NotNull
-    @Min(value = 0, message = "현재 재고 수량은 0 이상이어야 합니다.")
-    private Integer currentQuantity; // 현재 재고 수량
+    @Min(value = 0, message = "재고 수량은 0 이상이어야 합니다.")
+    private Integer updatedQuantity; // 현재 재고 수량
+
+    @Column(name = "updated_quantity_date", nullable = false)
+    private LocalDate updatedQuantityDate; // 재고 수량 업데이트 날짜
 }

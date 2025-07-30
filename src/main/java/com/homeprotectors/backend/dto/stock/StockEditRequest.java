@@ -24,7 +24,7 @@ public class StockEditRequest {
     private Integer unitDays;
 
     @Schema(description = "현재 재고 수량")
-    private Integer currentQuantity;
+    private Integer updatedQuantity;
 
     @Schema(description = "미리 알림 일수 (일 단위)")
     private Integer reminderDays;

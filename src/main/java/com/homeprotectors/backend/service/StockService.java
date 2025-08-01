@@ -38,22 +38,20 @@ public class StockService {
         stock.setReminderDays(request.getReminderDays());
         stock.setUpdatedQuantity(request.getUpdatedQuantity());
 
-        // nextDue 계산 로직
-        // unitQuantity 개에 unitDays 일 & currentQuantity 따로 입력해서 계산
-        // 예: 3개에 7일 & 현재수량: 5개 -> 오늘 + (1개당 2.3일 * 5개) -> 12일 (올림) -> 7/27
-        if (request.getUnitDays() != null && request.getUnitQuantity() != null && request.getUpdatedQuantity() != null) {
-            double daysPerUnit = (double) request.getUnitDays() / request.getUnitQuantity();
-            double totalDays = daysPerUnit * request.getUpdatedQuantity();
-            stock.setNextDue(LocalDate.now().plusDays((long) Math.ceil(totalDays)));
-        } else {
-            stock.setNextDue(LocalDate.now()); // 기본값으로 오늘 날짜 설정
-        }
-
         // UpdatedQuantity가 업데이트됐을 때만 현재 시간으로 UpdatedQuantityDate 설정
         if (request.getUpdatedQuantity() != null) {
             stock.setUpdatedQuantityDate(LocalDate.now());
+        }
+
+        // nextDue 계산 로직
+        // unitQuantity 개에 unitDays 일 & updatedQuantity 따로 입력해서 계산
+        // 예: 3개에 7일 & 현재수량: 5개 -> 오늘 + (1개당 2.3일 * 5개) -> 12일 (반올림) -> 7/27
+        if (request.getUnitDays() != null && request.getUnitQuantity() != null && request.getUpdatedQuantity() != null) {
+            double daysPerUnit = (double) request.getUnitDays() / request.getUnitQuantity();
+            double totalDays = daysPerUnit * request.getUpdatedQuantity();
+            stock.setNextDue(LocalDate.now().plusDays((int) Math.round(totalDays)));
         } else {
-            stock.setUpdatedQuantityDate(null); // 업데이트된 수량이 없는 경우
+            stock.setNextDue(LocalDate.now()); // 기본값으로 오늘 날짜 설정
         }
 
         // 현재 시간으로 createdAt 설정
@@ -73,17 +71,46 @@ public class StockService {
         Long groupId = 1L; // TODO: 인증 기반으로 동적으로 받을 예정
 
         List<Stock> stocks = stockRepository.findByGroupId(groupId);
+
+        // currentQuantity 계산 로직
+        // 필드가 아닌 변수로 currentQuantity를 계산해서 response로 반환
+
+        // updatedQuantityDate로부터 현재까지의 일수를 계산
+        // unitQuantity / unitDays로 하루에 소비되는 단위 수량 계산
+        // 현재 예상 currentQuantity = updatedQuantity - (daysSinceUpdate * dailyConsumption)
+        // crruentQuantity = updatedQuantity - (daysSinceUpdate * (unitQuantity / unitDays))
+        LocalDate today = LocalDate.now();
         return stocks.stream()
-                .map(stock -> new StockListItemResponse(
-                        stock.getId(),
-                        stock.getName(),
-                        stock.getUnitQuantity(),
-                        stock.getUnit(),
-                        stock.getUnitDays(),
-                        stock.getUpdatedQuantity(),
-                        stock.getNextDue(),
-                        stock.getReminderDays()
-                ))
+                .map(stock -> {
+                    LocalDate updatedQuantityDate = stock.getUpdatedQuantityDate();
+                    if (updatedQuantityDate == null) {
+                        return new StockListItemResponse(
+                                stock.getId(),
+                                stock.getName(),
+                                stock.getUnitQuantity(),
+                                stock.getUnit(),
+                                stock.getUnitDays(),
+                                stock.getUpdatedQuantity(), // 초기값으로 updatedQuantity 사용
+                                stock.getNextDue(),
+                                stock.getReminderDays()
+                        );
+                    }
+
+                    long daysSinceUpdate = today.toEpochDay() - updatedQuantityDate.toEpochDay();
+                    double dailyConsumption = (double) stock.getUnitQuantity() / stock.getUnitDays();
+                    int currentQuantity = Math.max(0, (int) Math.ceil(stock.getUpdatedQuantity() - (daysSinceUpdate * dailyConsumption)));
+
+                    return new StockListItemResponse(
+                            stock.getId(),
+                            stock.getName(),
+                            stock.getUnitQuantity(),
+                            stock.getUnit(),
+                            stock.getUnitDays(),
+                            currentQuantity,
+                            stock.getNextDue(),
+                            stock.getReminderDays()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -106,19 +133,23 @@ public class StockService {
         }
         if (request.getUpdatedQuantity() != null) {
             stock.setUpdatedQuantity(request.getUpdatedQuantity());
+
+            // UpdatedQuantity가 업데이트됐을 때만 현재 시간으로 UpdatedQuantityDate 설정
+            stock.setUpdatedQuantityDate(LocalDate.now());
         }
+
 
         // nextDue 재계산 로직 - 재고의 수량에 따라 다음 소진 예정일을 업데이트
         // unitQuantity 개에 unitDays 일 & currentQuantity 따로 입력해서 계산
         // 3개 중 새로운 입력값이 없는 값은 해당 값은 기존 입력값을 사용해서 계산
         Integer unitDays = (request.getUnitDays() != null) ? request.getUnitDays() : stock.getUnitDays();
         Integer unitQuantity = (request.getUnitQuantity() != null) ? request.getUnitQuantity() : stock.getUnitQuantity();
-        Integer currentQuantity = (request.getUpdatedQuantity() != null) ? request.getUpdatedQuantity() : stock.getUpdatedQuantity();
+        Integer updatedQuantity = (request.getUpdatedQuantity() != null) ? request.getUpdatedQuantity() : stock.getUpdatedQuantity();
 
-        if (unitDays != null && unitQuantity != null && currentQuantity != null) {
+        if (unitDays != null && unitQuantity != null && updatedQuantity != null) {
             double daysPerUnit = (double) unitDays / unitQuantity;
-            double totalDays = daysPerUnit * currentQuantity;
-            stock.setNextDue(LocalDate.now().plusDays((long) Math.ceil(totalDays)));
+            double totalDays = daysPerUnit * updatedQuantity;
+            stock.setNextDue(LocalDate.now().plusDays((int) Math.round(totalDays)));
         } else {
             stock.setNextDue(LocalDate.now()); // 기본값으로 오늘 날짜 설정
         }

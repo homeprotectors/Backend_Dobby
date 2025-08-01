@@ -34,7 +34,7 @@ public class StockController {
                 stock.getUnitQuantity(),
                 stock.getUnit(),
                 stock.getUnitDays(),
-                stock.getCurrentQuantity(),
+                stock.getUpdatedQuantity(),
                 stock.getNextDue(),
                 stock.getReminderDays()
         );
@@ -64,7 +64,7 @@ public class StockController {
                 updated.getUnitQuantity(),
                 updated.getUnit(),
                 updated.getUnitDays(),
-                updated.getCurrentQuantity(),
+                updated.getUpdatedQuantity(),
                 updated.getNextDue(),
                 updated.getReminderDays()
         );

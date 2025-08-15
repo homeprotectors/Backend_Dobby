@@ -17,7 +17,7 @@ public class BillHistory {
 
     @ManyToOne
     @JoinColumn(name = "bill_id", nullable = false)
-    private Long billId; // 청구서 ID (어떤 청구서의 결제 기록인지)
+    private Bill bill; // 청구서 정보
 
     @Column(name = "paid_date", nullable = false)
     private java.time.LocalDate paidDate; // 결제 날짜

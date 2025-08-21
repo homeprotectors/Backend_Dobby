@@ -8,12 +8,12 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Entity
-@Table
+@Table(name = "bills")
 @Data
 public class Bill {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "group_id", nullable = false)

@@ -32,8 +32,7 @@ public class BillController {
                 bill.getAmount(),
                 bill.getDueDate(),
                 bill.getIsVariable(),
-                bill.getReminderDays(),
-                bill.getReminderDate()
+                bill.getReminderDays()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)

@@ -31,6 +31,4 @@ public class BillCreateResponse {
     @Schema(description = "미리 알림 일수 (일 단위)", example = "3")
     private Integer reminderDays;
 
-    @Schema(description = "미리 알림 날짜")
-    private LocalDate reminderDate; // 미리 알림 날짜
 }

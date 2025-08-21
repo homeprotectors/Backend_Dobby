@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.bill.BillCreateRequest;
+import com.homeprotectors.backend.dto.bill.BillListItemResponse;
 import com.homeprotectors.backend.entity.Bill;
 import com.homeprotectors.backend.repository.BillHistoryRepository;
 import com.homeprotectors.backend.repository.BillRepository;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Service
@@ -58,4 +60,24 @@ public class BillService {
         return billRepository.save(bill);
 
     }
+
+    public List<BillListItemResponse> getbillList() {
+        Long groupId = 1L; // TODO: 임시 group ID, 실제로는 인증된 사용자 그룹 ID로 설정해야 함
+
+        List<Bill> bills = billRepository.findByGroupId(groupId);
+
+        return billRepository.findByGroupId(groupId)
+                .stream()
+                .map(bill -> new BillListItemResponse(
+                        bill.getId(),
+                        bill.getName(),
+                        bill.getAmount(),
+                        bill.getDueDate(),
+                        bill.getIsVariable(),
+                        bill.getReminderDays(),
+                        bill.getReminderDate()
+                ))
+                .toList();
+    }
+
 }

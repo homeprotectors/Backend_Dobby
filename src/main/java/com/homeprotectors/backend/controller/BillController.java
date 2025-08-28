@@ -3,11 +3,11 @@ package com.homeprotectors.backend.controller;
 import com.homeprotectors.backend.dto.bill.BillCreateRequest;
 import com.homeprotectors.backend.dto.bill.BillCreateResponse;
 import com.homeprotectors.backend.dto.bill.BillListItemResponse;
-import com.homeprotectors.backend.dto.chore.ChoreListItemResponse;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.entity.Bill;
 import com.homeprotectors.backend.service.BillService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ public class BillController {
 
     @Operation(summary="bill 생성", description="Create a new bill")
     @PostMapping
-    public ResponseEntity<ResponseDTO<BillCreateResponse>> createBill(BillCreateRequest request) {
+    public ResponseEntity<ResponseDTO<BillCreateResponse>> createBill(@Valid @RequestBody BillCreateRequest request) {
         Bill bill = billService.createBill(request);
 
         BillCreateResponse response = new BillCreateResponse(

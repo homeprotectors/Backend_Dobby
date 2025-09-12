@@ -20,10 +20,7 @@ public class StockListItemResponse {
     private String name;
 
     @Schema(description = "재고 수량")
-    private Integer unitQuantity;
-
-    @Schema(description = "재고 단위")
-    private String unit;
+    private Integer unitQuantity; // N일에 M개
 
     @Schema(description = "단위 당 소비 주기 (일 단위)")
     private Integer unitDays;
@@ -31,9 +28,6 @@ public class StockListItemResponse {
     @Schema(description = "현재 재고 수량")
     private Integer currentQuantity;
 
-    @Schema(description = "다음 소비 예정일")
-    private LocalDate nextDue;
-
-    @Schema(description = "미리 알림 일수 (일 단위)")
-    private Integer reminderDays;
+    @Schema(description = "남은 재고 소진 예상 일수 (일 단위)")
+    private Integer remainingDays;
 }

@@ -17,16 +17,9 @@ public class StockEditRequest {
     @Schema(description = "재고 수량")
     private Integer unitQuantity;
 
-    @Schema(description = "재고 단위")
-    private String unit;
-
     @Schema(description = "단위 당 소비 주기 (일 단위)")
     private Integer unitDays;
 
     @Schema(description = "현재 재고 수량")
     private Integer updatedQuantity;
-
-    @Schema(description = "미리 알림 일수 (일 단위)")
-    private Integer reminderDays;
-
 }

@@ -32,11 +32,8 @@ public class StockController {
                 stock.getId(),
                 stock.getName(),
                 stock.getUnitQuantity(),
-                stock.getUnit(),
                 stock.getUnitDays(),
-                stock.getUpdatedQuantity(),
-                stock.getNextDue(),
-                stock.getReminderDays()
+                stock.getUpdatedQuantity()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -62,11 +59,8 @@ public class StockController {
                 updated.getId(),
                 updated.getName(),
                 updated.getUnitQuantity(),
-                updated.getUnit(),
                 updated.getUnitDays(),
-                updated.getUpdatedQuantity(),
-                updated.getNextDue(),
-                updated.getReminderDays()
+                updated.getUpdatedQuantity()
         );
 
         return ResponseEntity.ok(new ResponseDTO<>(true, "Stock updated successfully", response));

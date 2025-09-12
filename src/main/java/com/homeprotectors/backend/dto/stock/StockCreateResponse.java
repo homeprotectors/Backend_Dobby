@@ -21,18 +21,9 @@ public class StockCreateResponse {
     @Schema(description = "재고 수량", example = "8")
     private Integer unitQuantity;
 
-    @Schema(description = "재고 단위", example = "병")
-    private String unit;
-
     @Schema(description = "소비 주기 (일 단위)", example = "7")
     private Integer unitDays;
 
     @Schema(description = "입력 받은 재고 수량", example = "3")
     private Integer updatedQuantity;
-
-    @Schema(description = "다음 소비 예정일")
-    private LocalDate nextDue;
-
-    @Schema(description = "미리 알림 일수 (일 단위)", example = "2")
-    private Integer reminderDays;
 }

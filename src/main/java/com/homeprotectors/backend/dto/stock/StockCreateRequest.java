@@ -19,14 +19,8 @@ public class StockCreateRequest {
     @Schema(description = "재고 수량", example = "8")
     private Integer unitQuantity;
 
-    @Schema(description = "재고 단위", example = "병")
-    private String unit;
-
     @Schema(description = "단위 당 소비 주기 (일 단위)", example = "7")
     private Integer unitDays;
-
-    @Schema(description = "미리 알림 일수 (일 단위)", example = "2")
-    private Integer reminderDays;
 
     @Schema(description = "재고", example = "3")
     private Integer updatedQuantity;

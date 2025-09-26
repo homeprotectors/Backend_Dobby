@@ -36,11 +36,7 @@ jobs:
         id: meta
         run: |
           SHORT=${GITHUB_SHA::12}
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            echo "tag=prod-${SHORT}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=pr-${{ github.event.number || 'dry' }}-${SHORT}" >> $GITHUB_OUTPUT
-          fi
+          echo "tag=prod-${SHORT}-${GITHUB_RUN_ATTEMPT}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials (OIDC)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -63,7 +59,6 @@ jobs:
           push: true
           tags: |
             146414906510.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.meta.outputs.tag }}
-            146414906510.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
 
   deploy-ec2:
     needs: build-and-push

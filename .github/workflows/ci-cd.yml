@@ -2,9 +2,13 @@ name: ci-cd
 
 on:
   push:
-    branches: [ "main", "feature/*"]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main"]
+    branches: [ "main" ]
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   AWS_REGION: ap-northeast-2
@@ -27,21 +31,31 @@ jobs:
       - name: Build jar (skip tests)
         run: ./gradlew clean build -x test
 
-      - name: Derive image tag (short sha)
+      # 브랜치별 태그 정책: main만 latest 부여
+      - name: Derive image tag
         id: meta
-        run: echo "tag=${GITHUB_SHA::12}" >> $GITHUB_OUTPUT
+        run: |
+          SHORT=${GITHUB_SHA::12}
+          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            echo "tag=prod-${SHORT}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=pr-${{ github.event.number || 'dry' }}-${SHORT}" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Configure AWS credentials via OIDC
+      - name: Configure AWS credentials (OIDC)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: arn:aws:iam::146414906510:role/GitHubActionsPushToECR
           role-session-name: gh-actions-ecr
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push
+      - name: Build and push (main만)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -53,7 +67,7 @@ jobs:
 
   deploy-ec2:
     needs: build-and-push
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: SSH deploy (compose pull & up)
@@ -65,7 +79,7 @@ jobs:
           script: |
             set -e
             export APP_VERSION=${{ needs.build-and-push.outputs.image_tag }}
-            cd /srv/home-protectors
+            cd /srv/homeprotectors
             docker compose pull
             APP_VERSION=${APP_VERSION} docker compose up -d --remove-orphans
             docker image prune -f

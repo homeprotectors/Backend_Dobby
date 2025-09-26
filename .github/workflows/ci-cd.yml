@@ -2,9 +2,9 @@ name: ci-cd
 
 on:
   push:
-    branches: [ "main", "feature"]
+    branches: [ "main", "feature/*"]
   pull_request:
-    branches: [ "main", "feature"]
+    branches: [ "main"]
 
 env:
   AWS_REGION: ap-northeast-2

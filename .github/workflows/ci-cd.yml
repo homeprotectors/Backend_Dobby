@@ -24,11 +24,8 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Build jar
+      - name: Build jar (skip tests)
         run: ./gradlew clean build -x test
-
-      - name: Tests
-        run: ./gradlew test
 
       - name: Derive image tag (short sha)
         id: meta

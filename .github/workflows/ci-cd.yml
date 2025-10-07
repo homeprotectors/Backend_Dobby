@@ -31,7 +31,7 @@ jobs:
       - name: Build jar (skip tests)
         run: ./gradlew clean build -x test
 
-      # 브랜치별 태그 정책: main만 latest 부여
+      # 브랜치별 태그: main만 latest 부여
       - name: Derive image tag
         id: meta
         run: |
@@ -74,6 +74,14 @@ jobs:
           script: |
             set -e
             export APP_VERSION=${{ needs.build-and-push.outputs.image_tag }}
+            
+            # ECR 로그인(매 배포마다 재인증)
+            REGION=${REGION:-ap-northeast-2}
+            ACCOUNT_ID=146414906510
+            REGISTRY="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
+            aws ecr get-login-password --region "$REGION" \
+            | docker login --username AWS --password-stdin "$REGISTRY"
+
             cd /srv/homeprotectors
             docker compose pull
             APP_VERSION=${APP_VERSION} docker compose up -d --remove-orphans

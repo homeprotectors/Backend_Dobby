@@ -1,5 +1,7 @@
 package com.homeprotectors.backend.dto.chore;
 
+import com.homeprotectors.backend.entity.RecurrenceType;
+import com.homeprotectors.backend.entity.RoomCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,28 +9,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "chore item list response DTO")
 public class ChoreListItemResponse {
-
-    @Schema(description = "chore ID")
     private Long id;
-
-    @Schema(description = "chore title")
     private String title;
-
-    @Schema(description = "repeat cycle (day)")
-    private Integer cycleDays;
-
-    @Schema(description = "next due date")
+    private RecurrenceType recurrenceType;
+    private Set<String> selectedCycle;
+    private RoomCategory roomCategory;
     private LocalDate nextDue;
-
-    @Schema(description = "days before due date to trigger reminder")
-    private Integer reminderDays;
-
-    @Schema(description = "next reminder date")
-    private LocalDate reminderDate;
 }

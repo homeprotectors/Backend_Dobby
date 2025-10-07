@@ -1,264 +1,347 @@
 package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.chore.*;
-import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.entity.Chore;
-import com.homeprotectors.backend.entity.ChoreHistory;
-import com.homeprotectors.backend.repository.ChoreHistoryRepository;
+import com.homeprotectors.backend.entity.RecurrenceType;
 import com.homeprotectors.backend.repository.ChoreRepository;
 import com.homeprotectors.backend.repository.GroupRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-@Data
 @Service
 @RequiredArgsConstructor
 public class ChoreService {
 
     private final ChoreRepository choreRepository;
     private final GroupRepository groupRepository; // TODO: 그룹 기능 추후 추가
-    private final ChoreHistoryRepository choreHistoryRepository;
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
+    private void validateCycle(ChoreCreateRequest req) {
+        if (!req.getRecurrenceType().isValidSelection(req.getSelectedCycle())) {
+            throw new IllegalArgumentException("Invalid selectedCycle for recurrenceType "
+                    + req.getRecurrenceType());
+        }
+    }
+
+    /**
+     * Chore 생성
+     */
     public Chore createChore(@Valid ChoreCreateRequest request) {
+        // selectedCycle 유효성 검사
+        validateCycle(request);
+
         Chore chore = new Chore();
-        chore.setGroupId(1L); // TODO: 임시 group ID
+        chore.setGroupId(1L); // TODO: JWT 인증 적용 후 동적 값
         chore.setTitle(request.getTitle());
-        chore.setCycleDays(request.getCycleDays());
-        chore.setReminderDays(request.getReminderDays());
-        chore.setCreatedBy(1L); // TODO: 임시 user ID. 나중에 JWT 인증 적용해서 동적으로 변경
+        chore.setRecurrenceType(request.getRecurrenceType());
+        chore.setSelectedCycle(request.getSelectedCycle());
+        chore.setRoomCategory(request.getRoomCategory());
+        chore.setCreatedBy(1L); // TODO: JWT 인증 적용 후 동적 값
         chore.setCreatedAt(LocalDateTime.now());
 
-        // 시작일이 null인 경우 오늘로 설정
-        LocalDate startDate = (request.getStartDate() != null) ? request.getStartDate() : LocalDate.now();
-        chore.setStartDate(startDate);
-
-        // chore 생성 시 nextDue는 시작일로 설정
-        chore.setNextDue(startDate);
-
-        // reminderDate 계산
-        if (chore.getReminderDays() != null) {
-            LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
-            // reminderDate가 오늘 이전인 경우 오늘로 설정
-            chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
-        }
+        // nextDue 초기 계산
+        chore.setNextDue(calculateInitialNextDue(request.getRecurrenceType(), request.getSelectedCycle()));
 
         return choreRepository.save(chore);
     }
 
+    /**
+     * Chore 목록 조회
+     */
     public List<ChoreListItemResponse> getChoreList() {
-        Long groupId = 1L; // TODO: 인증 기반으로 동적으로 받을 예정
-
+        Long groupId = 1L; // TODO: JWT 인증 기반으로 가져오기
         List<Chore> chores = choreRepository.findByGroupId(groupId);
+
         return chores.stream()
                 .map(c -> new ChoreListItemResponse(
                         c.getId(),
                         c.getTitle(),
-                        c.getCycleDays(),
-                        c.getNextDue(),
-                        c.getReminderDays(),
-                        c.getReminderDate()
+                        c.getRecurrenceType(),
+                        c.getSelectedCycle(),
+                        c.getRoomCategory(),
+                        c.getNextDue()
                 ))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Chore 수정
+     */
     public Chore editChore(Long choreId, ChoreEditRequest request) {
         Chore chore = choreRepository.findById(choreId)
                 .orElseThrow(() -> new EntityNotFoundException("Chore not found"));
 
-        if (request.getTitle() != null) {
-            chore.setTitle(request.getTitle());
-        }
-        if (request.getCycleDays() != null) {
-            chore.setCycleDays(request.getCycleDays());
-        }
-        chore.setReminderDays(request.getReminderDays());
+        if (request.getTitle() != null) chore.setTitle(request.getTitle());
+        if (request.getRoomCategory() != null) chore.setRoomCategory(request.getRoomCategory());
 
-        if (request.getCycleDays() != null) {
-            chore.setCycleDays(request.getCycleDays());
+        boolean ruleChanged = (request.getRecurrenceType() != null || request.getSelectedCycle() != null);
+        if (ruleChanged) {
+            // 검증용 임시 DTO 구성
+            ChoreCreateRequest tmp = new ChoreCreateRequest();
+            tmp.setRecurrenceType(
+                    request.getRecurrenceType() != null ? request.getRecurrenceType() : chore.getRecurrenceType()
+            );
+            tmp.setSelectedCycle(
+                    request.getSelectedCycle() != null ? request.getSelectedCycle() : chore.getSelectedCycle()
+            );
+            validateCycle(tmp); // selectedCycle 유효성 검사
+
+            if (request.getRecurrenceType() != null) chore.setRecurrenceType(request.getRecurrenceType());
+            if (request.getSelectedCycle() != null) chore.setSelectedCycle(request.getSelectedCycle());
+
+            chore.setNextDue(calculateInitialNextDue(chore.getRecurrenceType(), chore.getSelectedCycle()));
         }
-
-        // 시작일이 null인 경우 오늘로 설정
-        LocalDate startDate = (chore.getStartDate() != null) ? chore.getStartDate() : LocalDate.now();
-        chore.setStartDate(startDate);
-
-        // cycleDays가 변경되면 nextDue 재계산 - lastDone + cycleDays / lastDone이 없을 경우 startDate / 오늘 이전인 경우 오늘로 설정
-        if (chore.getLastDone() != null) {
-            LocalDate newNextDue = chore.getLastDone().plusDays(chore.getCycleDays());
-            chore.setNextDue(newNextDue.isBefore(LocalDate.now()) ? LocalDate.now() : newNextDue);
-        } else { // lastDone이 없을 경우
-            if (startDate.isAfter(LocalDate.now())) { // 시작일이 오늘 이후면 nextDue를 시작일로 설정
-                chore.setNextDue(startDate);
-            } else { // 시작일이 오늘 이전이면 nextDue를 오늘로 설정
-                chore.setNextDue(LocalDate.now());
-            }
-        }
-
-        // reminderDate 재계산 (reminderDays 변경 시)
-        if (chore.getReminderDays() != null) {
-            LocalDate calculatedReminderDate = chore.getNextDue().minusDays(chore.getReminderDays());
-            // reminderDate가 오늘 이전인 경우 오늘로 설정
-            chore.setReminderDate(calculatedReminderDate.isBefore(LocalDate.now()) ? LocalDate.now() : calculatedReminderDate);
-        } else {
-            chore.setReminderDate(null); // reminderDays가 null인 경우 reminderDate는 null로 설정
-        }
-
 
         return choreRepository.save(chore);
     }
 
+    /**
+     * Chore 삭제
+     */
     public void deleteChore(Long choreId) {
         Chore chore = choreRepository.findById(choreId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 chore가 존재하지 않습니다."));
-
-        // TODO: 인증 사용자 그룹 소속 여부 확인 필요 (JWT 인증 후 구현 예정)
+                .orElseThrow(() -> new EntityNotFoundException("Chore not found"));
         choreRepository.delete(chore);
     }
 
+    /**
+     * Chore 완료 → 다음 주기 계산
+     */
     public ChoreCompleteResponse completeChore(@Valid ChoreCompleteRequest request) {
         Chore chore = choreRepository.findById(request.getChoreId())
                 .orElseThrow(() -> new EntityNotFoundException("Chore not found"));
 
         LocalDate doneDate = request.getDoneDate();
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(KST);
 
-        // 2주 이전 또는 미래 완료는 허용하지 않음
-        if (doneDate.isBefore(today.minusDays(14)) || doneDate.isAfter(today)) {
-            throw new IllegalArgumentException("완료 날짜는 오늘로부터 과거 14일 이내여야 합니다.");
+        if (doneDate.isAfter(today)) {
+            throw new IllegalArgumentException("완료 날짜는 미래일 수 없습니다.");
         }
 
-        // 이미 해당 날짜에 완료 기록이 있는지 확인
-        if (choreHistoryRepository.existsByChoreIdAndDoneDate(chore.getId(), doneDate)) {
-            throw new IllegalArgumentException("이미 해당 날짜에 완료 기록이 존재합니다.");
-        }
+        // 완료 후 다음 nextDue 계산
+        LocalDate newNextDue = calculateNextDue(chore.getRecurrenceType(), chore.getSelectedCycle(), doneDate);
+        chore.setNextDue(newNextDue);
 
-        // 히스토리 기록
-        ChoreHistory history = new ChoreHistory();
-        history.setChore(chore);
-        history.setDoneDate(doneDate);
-        history.setDoneBy(1L); // TODO: JWT 적용 후 대체
-        history.setCreatedAt(LocalDateTime.now());
-
-        // scheduledDate는 기존 nextDue로 설정
-        history.setScheduledDate(chore.getNextDue());
-
-        // nextDue & reminderDate 갱신: doneDate가 가장 최근일 때만
-        if (chore.getLastDone() == null || doneDate.isAfter(chore.getLastDone())) {
-            chore.setLastDone(doneDate);
-
-            // nextDue 갱신 시 nextDue가 오늘보다 이전이면 오늘로 설정
-            LocalDate newNextDue = doneDate.plusDays(chore.getCycleDays());
-            chore.setNextDue(newNextDue.isBefore(today) ? today : newNextDue);
-
-            // reminderDate 갱신
-            if (chore.getReminderDays() != null) {
-                LocalDate newReminderDate = newNextDue.minusDays(chore.getReminderDays());
-                chore.setReminderDate(newReminderDate.isBefore(today) ? today : newReminderDate);
-            } else {
-                chore.setReminderDate(null);
-            }
-        }
-
-        choreHistoryRepository.save(history);
         choreRepository.save(chore);
 
         return new ChoreCompleteResponse(
                 chore.getId(),
                 chore.getGroupId(),
                 chore.getTitle(),
-                history.getScheduledDate(),
-                chore.getNextDue(),
-                chore.getReminderDate(),
-                1L // TODO: JWT 적용 후 대체
+                chore.getRoomCategory(),
+                chore.getRecurrenceType(),
+                newNextDue
         );
     }
 
-    public ChoreUndoResponse undoChoreCompletion(ChoreUndoRequest request) {
-        Long userId = 1L; // TODO: JWT 적용 후 대체
-        LocalDate today = LocalDate.now();
+    /**
+     * Main View용 섹션별 Chore 목록 조회
+     */
+    public ChoreSectionsResponse getChoreSections(int limitPerSection) {
+        var now = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        var weekStart = now.with(DayOfWeek.MONDAY);
+        var weekEnd   = weekStart.plusDays(6);
+        var monthStart = now.withDayOfMonth(1);
+        var monthEnd   = monthStart.plusMonths(1).minusDays(1);
+        var nextMonthEnd = monthStart.plusMonths(2).minusDays(1);
 
-        Chore chore = choreRepository.findById(request.getChoreId())
-                .orElseThrow(() -> new EntityNotFoundException("해당 Chore를 찾을 수 없습니다."));
+        var rows = choreRepository.findByGroupIdAndNextDueBetweenOrNextDueBefore(
+                1L, weekStart, nextMonthEnd, now
+        );
 
-        // 14일 이내만 취소 허용
-        if (request.getDoneDate().isBefore(today.minusDays(14))) {
-            throw new IllegalArgumentException("14일 이전 완료 기록은 취소할 수 없습니다.");
+        var overdue   = new ArrayList<ChoreListItemResponse>();
+        var thisWeek  = new ArrayList<ChoreListItemResponse>();
+        var nextWeek  = new ArrayList<ChoreListItemResponse>();
+        var thisMonth = new ArrayList<ChoreListItemResponse>();
+        var nextMonth = new ArrayList<ChoreListItemResponse>();
+
+        var nextWeekStart = weekStart.plusWeeks(1);
+        var nextWeekEnd   = nextWeekStart.plusDays(6);
+
+        for (var c : rows) {
+            var d = c.getNextDue();
+            var item = new ChoreListItemResponse(c.getId(), c.getTitle(), c.getRecurrenceType(), c.getSelectedCycle(), c.getRoomCategory(), d);
+            if (d.isBefore(now)) overdue.add(item);
+            else if (!d.isBefore(weekStart) && !d.isAfter(weekEnd)) thisWeek.add(item);
+            else if (!d.isBefore(nextWeekStart) && !d.isAfter(nextWeekEnd)) nextWeek.add(item);
+            else if (!d.isBefore(monthStart) && !d.isAfter(monthEnd)) thisMonth.add(item);
+            else nextMonth.add(item);
         }
 
-        // 해당 날짜의 히스토리 조회
-        ChoreHistory targetHistory = choreHistoryRepository
-                .findByChoreIdAndDoneDate(request.getChoreId(), request.getDoneDate())
-                .orElseThrow(() -> new EntityNotFoundException("해당 날짜의 완료 기록이 없습니다."));
+        Comparator<ChoreListItemResponse> cmp = Comparator
+                .comparing(ChoreListItemResponse::getNextDue)
+                .thenComparing(ChoreListItemResponse::getId);
+        overdue.sort(Comparator.comparing(ChoreListItemResponse::getNextDue));
+        thisWeek.sort(cmp); nextWeek.sort(cmp); thisMonth.sort(cmp); nextMonth.sort(cmp);
 
-        choreHistoryRepository.delete(targetHistory);
+        var thisWeekMerged = new ArrayList<ChoreListItemResponse>(overdue);
+        thisWeekMerged.addAll(thisWeek);
 
-        // 삭제한 날짜가 chore.lastDone과 같으면, 다시 계산 필요
-        if (chore.getLastDone() != null && chore.getLastDone().equals(request.getDoneDate())) {
-            // 남아 있는 히스토리 중 가장 최근 doneDate 찾기
-            Optional<ChoreHistory> latestHistoryOpt = choreHistoryRepository
-                    .findTopByChoreIdOrderByDoneDateDesc(chore.getId());
+        return ChoreSectionsResponse.builder()
+                .sections(ChoreSectionsResponse.Sections.builder()
+                        .thisWeek(section(thisWeekMerged, limitPerSection))
+                        .nextWeek(section(nextWeek, limitPerSection))
+                        .thisMonth(section(thisMonth, limitPerSection))
+                        .nextMonth(section(nextMonth, limitPerSection))
+                        .build())
+                .build();
+    }
 
-            if (latestHistoryOpt.isPresent()) {
-                LocalDate latestDoneDate = latestHistoryOpt.get().getDoneDate();
-                chore.setLastDone(latestDoneDate);
+    private ChoreSectionsResponse.Section section(List<ChoreListItemResponse> items, int limit) {
+        var view = items.size() > limit ? items.subList(0, limit) : items;
+        return ChoreSectionsResponse.Section.builder()
+                .count(view.size())
+                .items(view)
+                .build();
+    }
 
-                // nextDue, reminderDate 재계산 - 오늘 이전이면 오늘로 설정
-                LocalDate newNextDue = latestDoneDate.plusDays(chore.getCycleDays());
-                chore.setNextDue(newNextDue.isBefore(today) ? today : newNextDue);
+    /**
+     * 생성 시 최초 nextDue 계산
+     */
+    private LocalDate calculateInitialNextDue(RecurrenceType type, Set<String> selectedCycle) {
+        LocalDate today = LocalDate.now(KST);
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd   = weekStart.plusDays(6);
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd   = monthStart.plusMonths(1).minusDays(1);
 
-                if (chore.getReminderDays() != null) {
-                    LocalDate newReminderDate = newNextDue.minusDays(chore.getReminderDays());
-                    chore.setReminderDate(newReminderDate.isBefore(today) ? today : newReminderDate);
-                } else {
-                    chore.setReminderDate(null);
-                }
-            } else {
-                // 기록이 하나도 없다면 초기 상태로
-                chore.setLastDone(null);
-                chore.setNextDue(today);
-                chore.setReminderDate(null);
+        return switch (type) {
+            // 간격형: 생성 시 1회 클램프 유지
+            case WEEKLY -> min(today.plusDays(7), weekEnd);
+            case BIWEEKLY -> min(today.plusDays(14), monthEnd);
+            case MONTHLY_INTERVAL -> min(today.plusDays(30), monthEnd);
+
+            // 고정형: “다음 자연 발생일”
+            case DAY   -> findClosestDayOfWeek(today, selectedCycle);
+            case DATE  -> nextDateByDateTokens(today, selectedCycle);
+            case MONTH -> nextDateBySelectedMonths(today, selectedCycle /*defaultDay*/);
+        };
+    }
+
+    private static LocalDate min(LocalDate a, LocalDate b) { return a.isAfter(b) ? b : a; }
+
+
+    /**
+     * 완료 후 nextDue 계산
+     */
+    private LocalDate calculateNextDue(RecurrenceType type, Set<String> selectedCycle, LocalDate doneDate) {
+        switch (type) {
+            case WEEKLY:
+                return doneDate.plusDays(7);
+            case BIWEEKLY:
+                return doneDate.plusDays(14);
+            case MONTHLY_INTERVAL:
+                return doneDate.plusDays(30);
+            case DAY:
+                return findNextDayOfWeek(doneDate, selectedCycle);
+            case DATE:
+                int day = doneDate.getDayOfMonth();
+                LocalDate nextMonth = doneDate.plusMonths(1);
+                return nextMonth.withDayOfMonth(Math.min(day, nextMonth.lengthOfMonth()));
+            case MONTH:
+                int anchor = doneDate.getDayOfMonth();
+                LocalDate candidate = findNextSelectedMonth(doneDate, selectedCycle);
+                return candidate.withDayOfMonth(Math.min(anchor, candidate.lengthOfMonth()));
+            default:
+                return doneDate;
+        }
+    }
+
+    private LocalDate findClosestDayOfWeek(LocalDate today, Set<String> selectedCycle) {
+        for (int i = 0; i < 7; i++) {
+            LocalDate candidate = today.plusDays(i);
+            if (selectedCycle.contains(candidate.getDayOfWeek().name())) {
+                return candidate;
             }
-
-            choreRepository.save(chore);
         }
-        return new ChoreUndoResponse(
-                chore.getId(),
-                chore.getNextDue(),
-                chore.getReminderDate(),
-                chore.getLastDone()
-        );
+        return today;
     }
 
-    public ChoreHistoryItemResponse getChoreHistory(Long choreId) {
-        List<ChoreHistory> histories = choreHistoryRepository.findByChoreIdOrderByDoneDateDesc(choreId);
-
-        Chore chore = choreRepository.findById(choreId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 Chore를 찾을 수 없습니다."));
-
-        // 응답으로 choreId, nextDue, history 리스트 반환
-        return new ChoreHistoryItemResponse(
-                choreId,
-                chore.getNextDue(),
-                histories.stream()
-                        .map(h -> new ChoreHistoryItemResponse.ChoreHistoryListResponse(
-                                h.getId(),
-                                h.getDoneDate(),
-                                h.getDoneBy()
-                        ))
-                        .collect(Collectors.toList())
-        );
-
+    private LocalDate findNextDayOfWeek(LocalDate doneDate, Set<String> selectedCycle) {
+        for (int i = 1; i <= 7; i++) {
+            LocalDate candidate = doneDate.plusDays(i);
+            if (selectedCycle.contains(candidate.getDayOfWeek().name())) {
+                return candidate;
+            }
+        }
+        return doneDate.plusDays(7);
     }
 
+    private LocalDate findNextSelectedMonth(LocalDate doneDate, Set<String> selectedCycle) {
+        int currentYear = doneDate.getYear();
+        int currentMonth = doneDate.getMonthValue();
 
+        for (int i = 1; i <= 12; i++) {
+            LocalDate candidate = doneDate.plusMonths(i);
+            if (selectedCycle.contains(String.valueOf(candidate.getMonthValue()))) {
+                return candidate;
+            }
+        }
+        return LocalDate.of(currentYear + 1, Integer.parseInt(selectedCycle.iterator().next()), 1);
+    }
+
+    // DATE: selectedCycle에 "END" 또는 "1".."30"이 들어온다는 전제
+    private LocalDate nextDateByDateTokens(LocalDate base, Set<String> tokens) {
+        if (tokens == null || tokens.isEmpty()) return base; // 검증이 막아주지만 가드
+        // 후보일(이번 달 기준) 계산
+        List<LocalDate> cands = new ArrayList<>();
+        int lenThis = base.lengthOfMonth();
+
+        for (String t : tokens) {
+            if ("END".equalsIgnoreCase(t)) {
+                cands.add(base.withDayOfMonth(lenThis)); // 이번 달 말일
+            } else {
+                try {
+                    int dom = Integer.parseInt(t);
+                    if (dom >= 1 && dom <= 30) {
+                        int day = Math.min(dom, lenThis);
+                        cands.add(base.withDayOfMonth(day));
+                    }
+                } catch (NumberFormatException ignore) {}
+            }
+        }
+        // 오늘 이전 후보는 다음 달로 이월
+        LocalDate best = null;
+        for (LocalDate d : cands) {
+            LocalDate dd = !d.isBefore(base) ? d : safelyDom(base.plusMonths(1), d.getDayOfMonth());
+            if (best == null || dd.isBefore(best)) best = dd;
+        }
+        return best != null ? best : base;
+    }
+
+    // MONTH: 선택 월들 중 base 이후 가장 가까운 월의 날짜를 반환  (기본은 1일)
+    private LocalDate nextDateBySelectedMonths(LocalDate base, Set<String> months) {
+        if (months == null || months.isEmpty()) return base; // 검증 가드
+        for (int i = 0; i <= 24; i++) {
+            LocalDate cand = base.plusMonths(i);
+            String m = String.valueOf(cand.getMonthValue()); // "1".."12"
+            if (months.contains(m)) {
+                int len = cand.lengthOfMonth();
+                LocalDate d = cand.withDayOfMonth(Math.min(1, len));
+                if (!d.isBefore(base)) return d;
+            }
+        }
+        // 이론상 도달 X
+        LocalDate n = base.plusMonths(1);
+        return n.withDayOfMonth(1);
+    }
+
+    // 월 길이에 맞춰 일 보정
+    private LocalDate safelyDom(LocalDate any, int dom) {
+        int len = any.lengthOfMonth();
+        return any.withDayOfMonth(Math.min(dom, len));
+    }
 
 }

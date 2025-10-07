@@ -5,6 +5,9 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "chores")
@@ -21,17 +24,21 @@ public class Chore {
     @Column(nullable = false)
     private String title;
 
-    private Integer cycleDays;
-    private LocalDate startDate;
-    private LocalDate lastDone;
-    private LocalDate nextDue;
-    private LocalDate reminderDate;
-    private Integer reminderDays;
+    @Enumerated(EnumType.STRING)
+    private RecurrenceType recurrenceType;
 
-    @Column(nullable = false)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "chore_selected_cycle", joinColumns = @JoinColumn(name = "chore_id"))
+    @Column(name = "value")
+    private Set<String> selectedCycle = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    private RoomCategory roomCategory; // 방 카테고리
+
+    private LocalDate nextDue;
+
     private Long createdBy;
 
-    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "chore", cascade = CascadeType.ALL, orphanRemoval = true)

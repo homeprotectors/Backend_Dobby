@@ -219,14 +219,14 @@ public class ChoreService {
 
         return switch (type) {
             // 간격형: 생성 시 1회 클램프 유지
-            case WEEKLY -> min(today.plusDays(7), weekEnd);
-            case BIWEEKLY -> min(today.plusDays(14), monthEnd);
-            case MONTHLY_INTERVAL -> min(today.plusDays(30), monthEnd);
+            case PER_WEEKLY -> min(today.plusDays(7), weekEnd);
+            case PER_BIWEEKLY -> min(today.plusDays(14), monthEnd);
+            case PER_MONTHLY -> min(today.plusDays(30), monthEnd);
 
             // 고정형: “다음 자연 발생일”
-            case DAY   -> findClosestDayOfWeek(today, selectedCycle);
-            case DATE  -> nextDateByDateTokens(today, selectedCycle);
-            case MONTH -> nextDateBySelectedMonths(today, selectedCycle /*defaultDay*/);
+            case FIXED_DAY -> findClosestDayOfWeek(today, selectedCycle);
+            case FIXED_DATE -> nextDateByDateTokens(today, selectedCycle);
+            case FIXED_MONTH -> nextDateBySelectedMonths(today, selectedCycle /*defaultDay*/);
         };
     }
 
@@ -238,19 +238,19 @@ public class ChoreService {
      */
     private LocalDate calculateNextDue(RecurrenceType type, Set<String> selectedCycle, LocalDate doneDate) {
         switch (type) {
-            case WEEKLY:
+            case PER_WEEKLY:
                 return doneDate.plusDays(7);
-            case BIWEEKLY:
+            case PER_BIWEEKLY:
                 return doneDate.plusDays(14);
-            case MONTHLY_INTERVAL:
+            case PER_MONTHLY:
                 return doneDate.plusDays(30);
-            case DAY:
+            case FIXED_DAY:
                 return findNextDayOfWeek(doneDate, selectedCycle);
-            case DATE:
+            case FIXED_DATE:
                 int day = doneDate.getDayOfMonth();
                 LocalDate nextMonth = doneDate.plusMonths(1);
                 return nextMonth.withDayOfMonth(Math.min(day, nextMonth.lengthOfMonth()));
-            case MONTH:
+            case FIXED_MONTH:
                 int anchor = doneDate.getDayOfMonth();
                 LocalDate candidate = findNextSelectedMonth(doneDate, selectedCycle);
                 return candidate.withDayOfMonth(Math.min(anchor, candidate.lengthOfMonth()));
@@ -292,7 +292,7 @@ public class ChoreService {
         return LocalDate.of(currentYear + 1, Integer.parseInt(selectedCycle.iterator().next()), 1);
     }
 
-    // DATE: selectedCycle에 "END" 또는 "1".."30"이 들어온다는 전제
+    // FIXED_DATE: selectedCycle에 "END" 또는 "1".."30"이 들어온다는 전제
     private LocalDate nextDateByDateTokens(LocalDate base, Set<String> tokens) {
         if (tokens == null || tokens.isEmpty()) return base; // 검증이 막아주지만 가드
         // 후보일(이번 달 기준) 계산
@@ -321,7 +321,7 @@ public class ChoreService {
         return best != null ? best : base;
     }
 
-    // MONTH: 선택 월들 중 base 이후 가장 가까운 월의 날짜를 반환  (기본은 1일)
+    // FIXED_MONTH: 선택 월들 중 base 이후 가장 가까운 월의 날짜를 반환  (기본은 1일)
     private LocalDate nextDateBySelectedMonths(LocalDate base, Set<String> months) {
         if (months == null || months.isEmpty()) return base; // 검증 가드
         for (int i = 0; i <= 24; i++) {

@@ -219,9 +219,9 @@ public class ChoreService {
 
         return switch (type) {
             // 간격형: 생성 시 1회 클램프 유지
-            case PER_WEEKLY -> min(today.plusDays(7), weekEnd);
-            case PER_BIWEEKLY -> min(today.plusDays(14), monthEnd);
-            case PER_MONTHLY -> min(today.plusDays(30), monthEnd);
+            case PER_WEEK -> min(today.plusDays(7), weekEnd);
+            case PER_2WEEKS -> min(today.plusDays(14), monthEnd);
+            case PER_MONTH -> min(today.plusDays(30), monthEnd);
 
             // 고정형: “다음 자연 발생일”
             case FIXED_DAY -> findClosestDayOfWeek(today, selectedCycle);
@@ -238,11 +238,11 @@ public class ChoreService {
      */
     private LocalDate calculateNextDue(RecurrenceType type, Set<String> selectedCycle, LocalDate doneDate) {
         switch (type) {
-            case PER_WEEKLY:
+            case PER_WEEK:
                 return doneDate.plusDays(7);
-            case PER_BIWEEKLY:
+            case PER_2WEEKS:
                 return doneDate.plusDays(14);
-            case PER_MONTHLY:
+            case PER_MONTH:
                 return doneDate.plusDays(30);
             case FIXED_DAY:
                 return findNextDayOfWeek(doneDate, selectedCycle);

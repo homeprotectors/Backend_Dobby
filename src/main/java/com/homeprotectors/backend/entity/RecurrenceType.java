@@ -6,9 +6,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public enum RecurrenceType {
-    PER_WEEKLY(Set.of()),
-    PER_BIWEEKLY(Set.of()),
-    PER_MONTHLY(Set.of()),
+    PER_WEEK(Set.of()),
+    PER_2WEEKS(Set.of()),
+    PER_MONTH(Set.of()),
     FIXED_DAY(Set.of("MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY")),
     // DATE는 숫자 1~30, END 허용
     FIXED_DATE(Stream.concat(

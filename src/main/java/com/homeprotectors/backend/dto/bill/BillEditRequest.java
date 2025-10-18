@@ -3,28 +3,22 @@ package com.homeprotectors.backend.dto.bill;
 import com.homeprotectors.backend.entity.BillCategory;
 import com.homeprotectors.backend.entity.BillType;
 import jakarta.validation.constraints.*;
-
 import lombok.Data;
 
 @Data
-public class BillCreateRequest {
+public class BillEditRequest {
 
-    @NotBlank
     private String name;
 
-    @NotNull
-    private BillCategory category; // 주거/생활취미/기타
+    private BillCategory category;
 
-    @NotNull
-    private BillType type; // 수도세/전기세/가스난방/관리비/기타
+    private BillType type;
 
-    @NotNull @Min(0)
+    @Min(0)
     private Integer amount;
 
-    @NotNull
     private Boolean isVariable;
 
-    // null 또는 1~31
     @Min(1) @Max(31)
     private Integer dueDate;
 }

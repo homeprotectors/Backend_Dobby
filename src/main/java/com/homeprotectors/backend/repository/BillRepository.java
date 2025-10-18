@@ -2,11 +2,15 @@ package com.homeprotectors.backend.repository;
 
 import com.homeprotectors.backend.entity.Bill;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
-@Repository
 public interface BillRepository extends JpaRepository<Bill, Long> {
-    List<Bill> findByGroupId(Long groupId);
+
+    List<Bill> findByGroupId(Long groupId); // @Where 로 soft-deleted 제외됨
+
+    Optional<Bill> findByIdAndGroupId(Long id, Long groupId);
+
+    long countByGroupId(Long groupId);
 }

@@ -1,17 +1,23 @@
 package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.bill.BillCreateRequest;
+import com.homeprotectors.backend.dto.bill.BillEditRequest;
 import com.homeprotectors.backend.dto.bill.BillListItemResponse;
+import com.homeprotectors.backend.dto.bill.BillListViewResponse;
 import com.homeprotectors.backend.entity.Bill;
+import com.homeprotectors.backend.entity.BillType;
 import com.homeprotectors.backend.repository.BillHistoryRepository;
 import com.homeprotectors.backend.repository.BillRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Data
 @Service
@@ -21,63 +27,134 @@ public class BillService {
     private final BillRepository billRepository;
     private final BillHistoryRepository billHistoryRepository;
 
-    public Bill createBill(@Valid BillCreateRequest request) {
-        Bill bill = new Bill();
-        // Set the group ID and createdBy to temporary values for now
-        bill.setGroupId(1L); // TODO: 임시 group ID
-        bill.setName(request.getName());
-        bill.setAmount(request.getAmount());
 
-        if (request.getDueDate() >= 1 && request.getDueDate() <= 31) { // 청구일은 1-31 사이의 값만
-            bill.setDueDate(request.getDueDate());
+    private static final Long GROUP_ID = 1L;
+    private static final Long USER_ID = 1L;
+
+    @Transactional
+    public Bill createBill(@Valid BillCreateRequest req) {
+        Bill b = new Bill();
+        b.setGroupId(GROUP_ID);
+        b.setCreatedBy(USER_ID);
+        b.setName(req.getName());
+        b.setCategory(req.getCategory());
+        b.setType(req.getType());
+        b.setAmount(req.getAmount());
+        b.setIsVariable(req.getIsVariable());
+        if (req.getDueDate() != null) {
+            int due = req.getDueDate();
+            if (due < 1 || due > 31) throw new IllegalArgumentException("dueDate는 1~31 또는 null");
+            b.setDueDate(due);
         } else {
-            throw new IllegalArgumentException("청구 일자는 1에서 31 사이의 값이어야 합니다.");
+            b.setDueDate(null);
         }
-
-        bill.setCreatedBy(1L); // TODO: 임시 생성자 ID, 실제로는 인증된 사용자 ID로 설정해야 함
-        bill.setIsVariable(request.getIsVariable());
-
-        if (request.getReminderDays() != null) { // 미리 알림 일수 설정
-            bill.setReminderDays(request.getReminderDays());
-
-            // 미리 알림 날짜 계산 (매월 청구 일자 - 미리 알림 일수) 예: Due Date가 30일이고 Reminder Days가 2일이면 Reminder Date는 28일
-            LocalDate dueDate;
-            if (LocalDate.now().lengthOfMonth() > request.getDueDate()) {
-                // 현재 달의 dueDate가 있는 경우, 해당 월의 dueDate로 설정
-                dueDate = LocalDate.now().withDayOfMonth(request.getDueDate());
-            } else {
-                // 현재 달의 dueDate가 없는 경우, 해당 월의 마지막 날로 설정
-                dueDate = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-            }
-
-            bill.setReminderDate(dueDate.minusDays(request.getReminderDays()));
-
-        } else {
-            bill.setReminderDays(null);
-            bill.setReminderDate(null);
-        }
-
-        return billRepository.save(bill);
-
+        return billRepository.save(b);
     }
 
-    public List<BillListItemResponse> getbillList() {
-        Long groupId = 1L; // TODO: 임시 group ID, 실제로는 인증된 사용자 그룹 ID로 설정해야 함
+    @Transactional
+    public Bill updateBill(Long billId, @Valid BillEditRequest req) {
+        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+                .orElseThrow(() -> new NoSuchElementException("bill not found"));
 
+        if (req.getName() != null) b.setName(req.getName());
+        if (req.getCategory() != null) b.setCategory(req.getCategory());
+        if (req.getType() != null) b.setType(req.getType());
+        if (req.getAmount() != null) b.setAmount(req.getAmount());
+        if (req.getIsVariable() != null) b.setIsVariable(req.getIsVariable());
+        if (req.getDueDate() != null) {
+            int due = req.getDueDate();
+            if (due < 1 || due > 31) throw new IllegalArgumentException("dueDate는 1~31 또는 null");
+            b.setDueDate(due);
+        }
+
+        return billRepository.save(b);
+    }
+
+    @Transactional
+    public void softDeleteBill(Long billId) {
+        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+                .orElseThrow(() -> new NoSuchElementException("bill not found"));
+        billRepository.delete(b); // @SQLDelete 로 deleted_at=now()
+    }
+
+    @Transactional
+    public BillListViewResponse getListView(String monthStr) {
+        // month 파싱 → 그 달 1일
+        LocalDate month = LocalDate.parse(monthStr + "-01");
+        LocalDate prev = month.minusMonths(1);
+
+        Long groupId = GROUP_ID;
+
+        // 전체 bills (soft-deleted 제외)
         List<Bill> bills = billRepository.findByGroupId(groupId);
+        int totalCount = bills.size();
 
-        return billRepository.findByGroupId(groupId)
+        // 해당월/전월 history 맵(billId -> amount)
+        Map<Long, Integer> histMonth = billHistoryRepository
+                .findByGroupIdAndYearMonth(groupId, month)
                 .stream()
-                .map(bill -> new BillListItemResponse(
-                        bill.getId(),
-                        bill.getName(),
-                        bill.getAmount(),
-                        bill.getDueDate(),
-                        bill.getIsVariable(),
-                        bill.getReminderDays(),
-                        bill.getReminderDate()
-                ))
-                .toList();
+                .collect(Collectors.toMap(h -> h.getBill().getId(), h -> h.getAmount(), (a, b) -> b));
+        Map<Long, Integer> histPrev = billHistoryRepository
+                .findByGroupIdAndYearMonth(groupId, prev)
+                .stream()
+                .collect(Collectors.toMap(h -> h.getBill().getId(), h -> h.getAmount(), (a, b) -> b));
+
+        // 섹션 분류 함수
+        Function<Bill, String> sectionOf = b -> {
+            if (b.getType() == BillType.수도세 || b.getType() == BillType.전기세
+                    || b.getType() == BillType.가스난방 || b.getType() == BillType.관리비) {
+                return "UTILITIES";
+            }
+            return b.getIsVariable() ? "VARIABLE" : "FIXED";
+        };
+
+        // 정렬: dueDate asc, name asc
+        Comparator<Bill> order = Comparator
+                .comparing((Bill b) -> Optional.ofNullable(b.getDueDate()).orElse(32))
+                .thenComparing(Bill::getName, Comparator.nullsLast(String::compareTo));
+
+        List<Bill> sorted = bills.stream().sorted(order).toList();
+
+        List<BillListItemResponse> util = new ArrayList<>();
+        List<BillListItemResponse> fixed = new ArrayList<>();
+        List<BillListItemResponse> variable = new ArrayList<>();
+
+        int monthTotal = 0;
+        int prevTotal = 0;
+
+        for (Bill b : sorted) {
+            // 해당월 아이템 금액 표시 규칙
+            int thisMonthAmount = b.getIsVariable()
+                    ? histMonth.getOrDefault(b.getId(), 0)
+                    : Optional.ofNullable(b.getAmount()).orElse(0);
+
+            int prevMonthAmount = b.getIsVariable()
+                    ? histPrev.getOrDefault(b.getId(), 0)
+                    : Optional.ofNullable(b.getAmount()).orElse(0);
+
+            monthTotal += thisMonthAmount;
+            prevTotal += prevMonthAmount;
+
+            BillListItemResponse item = new BillListItemResponse(
+                    b.getId(),
+                    b.getName(),
+                    b.getDueDate(),
+                    thisMonthAmount
+            );
+
+            switch (sectionOf.apply(b)) {
+                case "UTILITIES" -> util.add(item);
+                case "FIXED" -> fixed.add(item);
+                case "VARIABLE" -> variable.add(item);
+            }
+        }
+
+        int momDiff = monthTotal - prevTotal;
+
+        BillListViewResponse.Sections sections =
+                new BillListViewResponse.Sections(util, fixed, variable);
+
+        return new BillListViewResponse(monthStr, totalCount, monthTotal, momDiff, sections);
     }
 
 }

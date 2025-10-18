@@ -1,34 +1,45 @@
 package com.homeprotectors.backend.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
-
+import java.time.LocalDate;
 @Entity
-@Table
-@Data
+@Table(name = "bill_history",
+        indexes = {
+                @Index(name = "idx_history_group_month", columnList = "groupId, yearMonth"),
+                @Index(name = "idx_history_bill", columnList = "bill_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_group_bill_month", columnNames = {"groupId", "bill_id", "yearMonth"})
+        })
+@Getter @Setter
 public class BillHistory {
 
-    @Id
-    @GeneratedValue
-    private Long id; // 결제 기록 ID
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @ManyToOne
+    @Column(nullable = false)
+    private Long groupId;
+
+    @Column
+    private Long paidBy;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bill_id", nullable = false)
-    private Bill bill; // 청구서 정보
+    private Bill bill;
 
-    @Column(name = "paid_date", nullable = false)
-    private java.time.LocalDate paidDate; // 결제 날짜
+    /**
+     * 해당 월의 '첫째 날'로 저장 (예: 2025-07-01)
+     */
+    @Column(nullable = false)
+    private LocalDate yearMonth;
 
-    @Column(name = "paid_amount", nullable = false)
-    private Double paidAmount; // 결제 금액
+    @Column(nullable = false)
+    private Integer amount;      // 그 달 실제 납부액 (변동 bill)
 
-    @Column(name = "paid_by", nullable = false)
-    private Long paidBy; // 결제한 사람의 ID
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @Column
+    private LocalDate paidDate;  // 선택(입력했을 때만)
 
 }

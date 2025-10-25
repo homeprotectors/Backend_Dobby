@@ -24,6 +24,9 @@ public class StockCreateResponse {
     @Schema(description = "소비 주기 (일 단위)", example = "7")
     private Integer unitDays;
 
-    @Schema(description = "입력 받은 재고 수량", example = "3")
-    private Integer updatedQuantity;
+    @Schema(description = "현재 재고 수량", example = "3")
+    private Integer currentQuantity;
+
+    @Schema(description = "남은 일수", example = "15")
+    private Integer remainingDays;
 }

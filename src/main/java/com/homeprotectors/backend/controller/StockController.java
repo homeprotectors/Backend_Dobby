@@ -26,15 +26,7 @@ public class StockController {
     @Operation(summary = "stock 생성", description = "Create a new stock")
     @PostMapping
     public ResponseEntity<ResponseDTO<StockCreateResponse>> createStock(@Valid @RequestBody StockCreateRequest request) {
-        Stock stock = stockService.createStock(request);
-
-        StockCreateResponse response = new StockCreateResponse(
-                stock.getId(),
-                stock.getName(),
-                stock.getUnitQuantity(),
-                stock.getUnitDays(),
-                stock.getUpdatedQuantity()
-        );
+        StockCreateResponse response = stockService.createStock(request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseDTO<>(true, "Stock created successfully", response));
@@ -52,16 +44,7 @@ public class StockController {
     public ResponseEntity<ResponseDTO<StockCreateResponse>> editStock(
             @PathVariable Long stockId,
             @Valid @RequestBody StockCreateRequest request) {
-
-        Stock updated = stockService.editStock(stockId, request);
-
-        StockCreateResponse response = new StockCreateResponse(
-                updated.getId(),
-                updated.getName(),
-                updated.getUnitQuantity(),
-                updated.getUnitDays(),
-                updated.getUpdatedQuantity()
-        );
+        StockCreateResponse response = stockService.editStock(stockId, request);
 
         return ResponseEntity.ok(new ResponseDTO<>(true, "Stock updated successfully", response));
     }

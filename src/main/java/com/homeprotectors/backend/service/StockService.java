@@ -1,9 +1,8 @@
 package com.homeprotectors.backend.service;
 
-import com.homeprotectors.backend.dto.chore.ChoreListItemResponse;
 import com.homeprotectors.backend.dto.stock.StockCreateRequest;
+import com.homeprotectors.backend.dto.stock.StockCreateResponse;
 import com.homeprotectors.backend.dto.stock.StockListItemResponse;
-import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.entity.Stock;
 import com.homeprotectors.backend.repository.GroupRepository;
 import com.homeprotectors.backend.repository.StockRepository;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Data
@@ -27,7 +25,7 @@ public class StockService {
     private final StockRepository stockRepository;
     private final GroupRepository groupRepository;
 
-    public Stock createStock(@Valid StockCreateRequest request) {
+    public StockCreateResponse createStock(@Valid StockCreateRequest request) {
         Stock stock = new Stock();
         stock.setGroupId(1L); // TODO: 임시 group ID
         stock.setCreatedBy(1L); // TODO: 임시 생성자 ID, 실제로는 인증된 사용자 ID로 설정해야 함
@@ -44,7 +42,21 @@ public class StockService {
         // 현재 시간으로 createdAt 설정
         stock.setCreatedAt(LocalDateTime.now());
 
-        return stockRepository.save(stock);
+        stockRepository.save(stock);
+
+        LocalDate today = LocalDate.now();
+
+        int currentQuantity = calculateCurrentQuantity(stock, today);
+        int remainingDays = calculateRemainingDays(stock, currentQuantity);
+
+        return new StockCreateResponse(
+                stock.getId(),
+                stock.getName(),
+                stock.getUnitQuantity(),
+                stock.getUnitDays(),
+                currentQuantity,
+                remainingDays
+        );
     }
 
     public List<StockListItemResponse> getStockList() {
@@ -62,17 +74,8 @@ public class StockService {
         LocalDate today = LocalDate.now();
         return stocks.stream()
                 .map(stock -> {
-                    LocalDate updatedQuantityDate = stock.getUpdatedQuantityDate();
-
-                    long daysSinceUpdate = today.toEpochDay() - updatedQuantityDate.toEpochDay();
-                    double dailyConsumption = (double) stock.getUnitQuantity() / stock.getUnitDays();
-
-                    // 마지막 업데이트일로부터 지난 일자만큼 수량을 빼고, 음수가 되지 않도록 0 이상으로 설정
-                    double currentQuantityDouble = stock.getUpdatedQuantity() - (daysSinceUpdate * dailyConsumption);
-                    int currentQuantity = Math.max(0, (int) Math.ceil(currentQuantityDouble));
-
-                    // 현재 수량에 따른 remainingDays
-                    int remainingDays = Math.max (0, (int) Math.round(currentQuantityDouble / dailyConsumption));
+                    int currentQuantity = calculateCurrentQuantity(stock, today);
+                    int remainingDays = calculateRemainingDays(stock, currentQuantity);
 
                     return new StockListItemResponse(
                             stock.getId(),
@@ -86,7 +89,7 @@ public class StockService {
                 .collect(Collectors.toList());
     }
 
-    public Stock editStock(Long stockId, StockCreateRequest request) {
+    public StockCreateResponse editStock(Long stockId, StockCreateRequest request) {
         Stock stock = stockRepository.findById(stockId)
                 .orElseThrow(() -> new IllegalArgumentException("Stock not found"));
 
@@ -107,7 +110,20 @@ public class StockService {
             stock.setUpdatedQuantityDate(LocalDate.now());
         }
 
-        return stockRepository.save(stock);
+        stockRepository.save(stock);
+
+        LocalDate today = LocalDate.now();
+        int currentQuantity = calculateCurrentQuantity(stock, today);
+        int remainingDays = calculateRemainingDays(stock, currentQuantity);
+
+        return new StockCreateResponse(
+                stock.getId(),
+                stock.getName(),
+                stock.getUnitQuantity(),
+                stock.getUnitDays(),
+                currentQuantity,
+                remainingDays
+        );
     }
 
     public void deleteStock(Long stockId) {
@@ -117,4 +133,19 @@ public class StockService {
         // TODO: 인증 사용자 그룹 소속 여부 확인 (JWT 인증 기반으로 구현 예정)
         stockRepository.delete(stock);
     }
+
+    private int calculateCurrentQuantity(Stock stock, LocalDate today) {
+        LocalDate updatedQuantityDate = stock.getUpdatedQuantityDate();
+        long daysSinceUpdate = today.toEpochDay() - updatedQuantityDate.toEpochDay();
+        double dailyConsumption = (double) stock.getUnitQuantity() / stock.getUnitDays();
+
+        double currentQuantityDouble = stock.getUpdatedQuantity() - (daysSinceUpdate * dailyConsumption);
+        return Math.max(0, (int) Math.ceil(currentQuantityDouble));
+    }
+
+    private int calculateRemainingDays(Stock stock, int currentQuantity) {
+        double dailyConsumption = (double) stock.getUnitQuantity() / stock.getUnitDays();
+        return Math.max(0, (int) Math.round(currentQuantity / dailyConsumption));
+    }
+
 }

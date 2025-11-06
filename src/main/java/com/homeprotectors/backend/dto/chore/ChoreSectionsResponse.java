@@ -1,5 +1,6 @@
 package com.homeprotectors.backend.dto.chore;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,6 +11,7 @@ public class ChoreSectionsResponse {
     private Sections sections;
 
     @Getter @Builder
+    @Schema(name = "ChoreSections")
     public static class Sections {
         private Section thisWeek;  // overdue 포함(최상단)
         private Section nextWeek;

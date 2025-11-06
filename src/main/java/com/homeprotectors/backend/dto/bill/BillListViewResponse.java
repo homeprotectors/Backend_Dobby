@@ -1,5 +1,6 @@
 package com.homeprotectors.backend.dto.bill;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -16,6 +17,7 @@ public class BillListViewResponse {
 
     @Data
     @AllArgsConstructor
+    @Schema(name = "BillSections")
     public static class Sections {
         private List<BillListItemResponse> UTILITIES;
         private List<BillListItemResponse> FIXED;

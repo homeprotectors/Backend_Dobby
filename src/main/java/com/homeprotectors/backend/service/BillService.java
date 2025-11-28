@@ -73,6 +73,22 @@ public class BillService {
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
         billRepository.delete(b); // @SQLDelete 로 deleted_at=now()
     }
+    @Transactional
+    public void hideBill(Long billId) {
+        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+                .orElseThrow(() -> new NoSuchElementException("bill not found"));
+        LocalDate hiddenFrom = LocalDate.now().withDayOfMonth(1);
+        b.setHiddenFrom(hiddenFrom);
+        billRepository.save(b);
+    }
+
+    @Transactional
+    public void unhideBill(Long billId) {
+        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+                .orElseThrow(() -> new NoSuchElementException("bill not found"));
+        b.setHiddenFrom(null);
+        billRepository.save(b);
+    }
 
     @Transactional
     public BillListViewResponse getListView(String monthStr) {
@@ -113,6 +129,11 @@ public class BillService {
         double prevTotal = 0;
 
         for (Bill b : sorted) {
+            // 숨김 처리: hiddenFrom가 설정되어 있고 요청한 연월이 그 연월(또는 이후)이면 항목을 노출하지 않음
+            if (b.getHiddenFrom() != null && !month.isBefore(b.getHiddenFrom())) {
+                continue;
+            }
+
             // 해당월 아이템 금액 표시 규칙
             double thisMonthAmount = b.getIsVariable()
                     ? histMonth.getOrDefault(b.getId(), 0.0)

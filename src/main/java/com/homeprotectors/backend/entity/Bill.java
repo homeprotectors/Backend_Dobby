@@ -62,4 +62,7 @@ public class Bill {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt; // 소프트 삭제 마킹
 
+    @Column(name = "hidden_from")
+    private LocalDate hiddenFrom; // 삭제한 시점
+
 }

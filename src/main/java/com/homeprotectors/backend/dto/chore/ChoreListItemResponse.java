@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -22,4 +23,7 @@ public class ChoreListItemResponse {
     private Set<String> selectedCycle;
     private RoomCategory roomCategory;
     private LocalDate nextDue;
+
+    private boolean shoppingContainer;
+    private List<ChoreShoppingItemResponse> shoppingItems;
 }

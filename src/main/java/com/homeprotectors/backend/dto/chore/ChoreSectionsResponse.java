@@ -1,8 +1,7 @@
 package com.homeprotectors.backend.dto.chore;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.List;
 
@@ -18,9 +17,10 @@ public class ChoreSectionsResponse {
         private Section thisMonth;
         private Section nextMonth;
     }
+
     @Getter @Builder
     public static class Section {
-        private int count;
+        private Integer count;
         private List<ChoreListItemResponse> items;
     }
 }

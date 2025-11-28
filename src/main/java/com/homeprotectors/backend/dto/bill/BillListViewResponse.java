@@ -19,7 +19,6 @@ public class BillListViewResponse {
     @AllArgsConstructor
     @Schema(name = "BillSections")
     public static class Sections {
-        private List<BillListItemResponse> UTILITIES;
         private List<BillListItemResponse> FIXED;
         private List<BillListItemResponse> VARIABLE;
     }

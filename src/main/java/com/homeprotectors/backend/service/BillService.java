@@ -96,14 +96,8 @@ public class BillService {
                 .stream()
                 .collect(Collectors.toMap(h -> h.getBill().getId(), BillHistory::getAmount, (a, b) -> b));
 
-        // 섹션 분류 함수
-        Function<Bill, String> sectionOf = b -> {
-            if (b.getType() == BillType.수도세 || b.getType() == BillType.전기세
-                    || b.getType() == BillType.가스난방 || b.getType() == BillType.관리비) {
-                return "UTILITIES";
-            }
-            return b.getIsVariable() ? "VARIABLE" : "FIXED";
-        };
+        // 섹션 분류 함수: 이제는 isVariable 기준으로만 분류
+        Function<Bill, String> sectionOf = b -> b.getIsVariable() ? "VARIABLE" : "FIXED";
 
         // 정렬: dueDate asc, name asc
         Comparator<Bill> order = Comparator
@@ -112,7 +106,6 @@ public class BillService {
 
         List<Bill> sorted = bills.stream().sorted(order).toList();
 
-        List<BillListItemResponse> util = new ArrayList<>();
         List<BillListItemResponse> fixed = new ArrayList<>();
         List<BillListItemResponse> variable = new ArrayList<>();
 
@@ -121,13 +114,13 @@ public class BillService {
 
         for (Bill b : sorted) {
             // 해당월 아이템 금액 표시 규칙
-        double thisMonthAmount = b.getIsVariable()
-                ? histMonth.getOrDefault(b.getId(), 0.0)
-                : Optional.ofNullable(b.getAmount()).orElse(0.0);
+            double thisMonthAmount = b.getIsVariable()
+                    ? histMonth.getOrDefault(b.getId(), 0.0)
+                    : Optional.ofNullable(b.getAmount()).orElse(0.0);
 
-        double prevMonthAmount = b.getIsVariable()
-                ? histPrev.getOrDefault(b.getId(), 0.0)
-                : Optional.ofNullable(b.getAmount()).orElse(0.0);
+            double prevMonthAmount = b.getIsVariable()
+                    ? histPrev.getOrDefault(b.getId(), 0.0)
+                    : Optional.ofNullable(b.getAmount()).orElse(0.0);
             monthTotal += thisMonthAmount;
             prevTotal += prevMonthAmount;
 
@@ -139,7 +132,6 @@ public class BillService {
             );
 
             switch (sectionOf.apply(b)) {
-                case "UTILITIES" -> util.add(item);
                 case "FIXED" -> fixed.add(item);
                 case "VARIABLE" -> variable.add(item);
             }
@@ -148,7 +140,7 @@ public class BillService {
         double monDiff = monthTotal - prevTotal;
 
         BillListViewResponse.Sections sections =
-                new BillListViewResponse.Sections(util, fixed, variable);
+                new BillListViewResponse.Sections(fixed, variable);
 
         return new BillListViewResponse(monthStr, monthTotal, monDiff, sections);
     }

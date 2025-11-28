@@ -47,7 +47,7 @@ public class Bill {
     private BillType type;         // 수도세/전기세/가스난방/관리비/기타
 
     @Column(nullable = false)
-    private Integer amount;        // 원화 정수(필요시 BigDecimal로 교체)
+    private Double amount;        // 원화 정수(필요시 BigDecimal로 교체)
 
     @Column(nullable = false)
     private Boolean isVariable;    // true=변동, false=고정

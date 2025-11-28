@@ -37,7 +37,7 @@ public class BillHistory {
     private LocalDate yearMonth;
 
     @Column(nullable = false)
-    private Integer amount;      // 그 달 실제 납부액 (변동 bill)
+    private Double amount;      // 그 달 실제 납부액 (변동 bill)
 
     @Column
     private LocalDate paidDate;  // 선택(입력했을 때만)

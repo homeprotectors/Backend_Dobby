@@ -9,6 +9,6 @@ public class BillHistoryCreateResponse {
     private Long id;
     private Long billId;
     private String month;     // "YYYY-MM"
-    private Integer amount;
+    private Double amount;
     private String paidDate;  // "YYYY-MM-DD" or null
 }

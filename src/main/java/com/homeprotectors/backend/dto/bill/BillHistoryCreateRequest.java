@@ -17,9 +17,6 @@ public class BillHistoryCreateRequest {
     private String month;
 
     @NotNull @Min(0)
-    private Integer amount;
+    private Double amount;
 
-    // 선택값: "YYYY-MM-DD" or null
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$")
-    private String paidDate;
 }

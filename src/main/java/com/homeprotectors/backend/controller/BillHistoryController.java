@@ -50,7 +50,7 @@ public class BillHistoryController {
             @PathVariable Long historyId,
             @Valid @RequestBody BillHistoryEditRequest request) {
 
-        BillHistory h = billHistoryService.update(historyId, request);
+        BillHistory h = billHistoryService.update(request);
 
         BillHistoryCreateResponse body = new BillHistoryCreateResponse(
                 h.getId(),

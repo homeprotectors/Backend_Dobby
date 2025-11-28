@@ -5,6 +5,7 @@ import com.homeprotectors.backend.entity.Chore;
 import com.homeprotectors.backend.entity.RecurrenceType;
 import com.homeprotectors.backend.repository.ChoreRepository;
 import com.homeprotectors.backend.repository.GroupRepository;
+import com.homeprotectors.backend.repository.StockRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,8 @@ import java.util.stream.Collectors;
 public class ChoreService {
 
     private final ChoreRepository choreRepository;
+    private final StockRepository stockRepository;
+    private final StockService stockService;
     private final GroupRepository groupRepository; // TODO: 그룹 기능 추후 추가
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
@@ -71,7 +74,9 @@ public class ChoreService {
                         c.getRecurrenceType(),
                         c.getSelectedCycle(),
                         c.getRoomCategory(),
-                        c.getNextDue()
+                        c.getNextDue(),
+                        false,
+                        null
                 ))
                 .collect(Collectors.toList());
     }
@@ -146,6 +151,7 @@ public class ChoreService {
         );
     }
 
+
     /**
      * Main View용 섹션별 Chore 목록 조회
      */
@@ -172,7 +178,7 @@ public class ChoreService {
 
         for (var c : rows) {
             var d = c.getNextDue();
-            var item = new ChoreListItemResponse(c.getId(), c.getTitle(), c.getRecurrenceType(), c.getSelectedCycle(), c.getRoomCategory(), d);
+            var item = new ChoreListItemResponse(c.getId(), c.getTitle(), c.getRecurrenceType(), c.getSelectedCycle(), c.getRoomCategory(), d, false, null);
             if (d.isBefore(now)) overdue.add(item);
             else if (!d.isBefore(weekStart) && !d.isAfter(weekEnd)) thisWeek.add(item);
             else if (!d.isBefore(nextWeekStart) && !d.isAfter(nextWeekEnd)) nextWeek.add(item);
@@ -188,6 +194,47 @@ public class ChoreService {
 
         var thisWeekMerged = new ArrayList<ChoreListItemResponse>(overdue);
         thisWeekMerged.addAll(thisWeek);
+
+        // --- shopping: collect stocks with remainingDays <= 7 ---
+        var allStocks = stockRepository.findByGroupId(1L);
+
+        var shoppingItems = allStocks.stream()
+                .map(s -> {
+                    LocalDate today = LocalDate.now();
+                    LocalDate updatedDate = s.getUpdatedQuantityDate();
+                    long daysSinceUpdate = today.toEpochDay() - updatedDate.toEpochDay();
+                    double dailyConsumption = (double) s.getUnitQuantity() / s.getUnitDays();
+
+                    double currentDouble = s.getUpdatedQuantity() - (daysSinceUpdate * dailyConsumption);
+                    int currentQuantity = Math.max(0, (int) Math.ceil(currentDouble));
+
+                    int remainingDays = (dailyConsumption > 0)
+                            ? Math.max(0, (int) Math.round(currentQuantity / dailyConsumption))
+                            : 0; // 0 division 방지
+
+                    return new ChoreShoppingItemResponse(
+                            s.getId(),
+                            s.getName(),
+                            currentQuantity,
+                            remainingDays
+                    );
+                })
+                // 여기서 remainingDays 기준으로 필터
+                .filter(item -> item.getRemainingDays() <= 7)
+                .sorted(Comparator.comparing(ChoreShoppingItemResponse::getRemainingDays)
+                        .thenComparing(ChoreShoppingItemResponse::getId))
+                .collect(Collectors.toList());
+
+        if (!shoppingItems.isEmpty()) {
+            // 장보기 컨테이너 아이템을 생성해서 thisWeek 섹션에 추가
+            var shoppingContainer = new ChoreListItemResponse();
+            shoppingContainer.setId(0L);
+            shoppingContainer.setTitle("장보기");
+            shoppingContainer.setShoppingContainer(true);
+            shoppingContainer.setShoppingItems(shoppingItems);
+
+            thisWeekMerged.add(shoppingContainer);
+        }
 
         return ChoreSectionsResponse.builder()
                 .sections(ChoreSectionsResponse.Sections.builder()

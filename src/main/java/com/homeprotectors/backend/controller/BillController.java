@@ -71,4 +71,18 @@ public class BillController {
         billService.softDeleteBill(billId);
     }
 
+    @Operation(summary = "bill 숨기기", description = "Hide a bill from the current month onward")
+    @PostMapping("/{billId}/hide")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void hideBill(@PathVariable Long billId) {
+        billService.hideBill(billId);
+    }
+
+    @Operation(summary = "bill 숨김 취소", description = "Unhide a bill (make it visible again from now)")
+    @PostMapping("/{billId}/unhide")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unhideBill(@PathVariable Long billId) {
+        billService.unhideBill(billId);
+    }
+
 }

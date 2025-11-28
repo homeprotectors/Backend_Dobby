@@ -5,6 +5,7 @@ import com.homeprotectors.backend.dto.bill.BillEditRequest;
 import com.homeprotectors.backend.dto.bill.BillListItemResponse;
 import com.homeprotectors.backend.dto.bill.BillListViewResponse;
 import com.homeprotectors.backend.entity.Bill;
+import com.homeprotectors.backend.entity.BillHistory;
 import com.homeprotectors.backend.entity.BillType;
 import com.homeprotectors.backend.repository.BillHistoryRepository;
 import com.homeprotectors.backend.repository.BillRepository;
@@ -37,8 +38,6 @@ public class BillService {
         b.setGroupId(GROUP_ID);
         b.setCreatedBy(USER_ID);
         b.setName(req.getName());
-        b.setCategory(req.getCategory());
-        b.setType(req.getType());
         b.setAmount(req.getAmount());
         b.setIsVariable(req.getIsVariable());
         if (req.getDueDate() != null) {
@@ -57,8 +56,6 @@ public class BillService {
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
 
         if (req.getName() != null) b.setName(req.getName());
-        if (req.getCategory() != null) b.setCategory(req.getCategory());
-        if (req.getType() != null) b.setType(req.getType());
         if (req.getAmount() != null) b.setAmount(req.getAmount());
         if (req.getIsVariable() != null) b.setIsVariable(req.getIsVariable());
         if (req.getDueDate() != null) {
@@ -90,14 +87,14 @@ public class BillService {
         int totalCount = bills.size();
 
         // 해당월/전월 history 맵(billId -> amount)
-        Map<Long, Integer> histMonth = billHistoryRepository
+        Map<Long, Double> histMonth = billHistoryRepository
                 .findByGroupIdAndYearMonth(groupId, month)
                 .stream()
-                .collect(Collectors.toMap(h -> h.getBill().getId(), h -> h.getAmount(), (a, b) -> b));
-        Map<Long, Integer> histPrev = billHistoryRepository
+                .collect(Collectors.toMap(h -> h.getBill().getId(), BillHistory::getAmount, (a, b) -> b));
+        Map<Long, Double> histPrev = billHistoryRepository
                 .findByGroupIdAndYearMonth(groupId, prev)
                 .stream()
-                .collect(Collectors.toMap(h -> h.getBill().getId(), h -> h.getAmount(), (a, b) -> b));
+                .collect(Collectors.toMap(h -> h.getBill().getId(), BillHistory::getAmount, (a, b) -> b));
 
         // 섹션 분류 함수
         Function<Bill, String> sectionOf = b -> {
@@ -119,19 +116,18 @@ public class BillService {
         List<BillListItemResponse> fixed = new ArrayList<>();
         List<BillListItemResponse> variable = new ArrayList<>();
 
-        int monthTotal = 0;
-        int prevTotal = 0;
+        double monthTotal = 0;
+        double prevTotal = 0;
 
         for (Bill b : sorted) {
             // 해당월 아이템 금액 표시 규칙
-            int thisMonthAmount = b.getIsVariable()
-                    ? histMonth.getOrDefault(b.getId(), 0)
-                    : Optional.ofNullable(b.getAmount()).orElse(0);
+        double thisMonthAmount = b.getIsVariable()
+                ? histMonth.getOrDefault(b.getId(), 0.0)
+                : Optional.ofNullable(b.getAmount()).orElse(0.0);
 
-            int prevMonthAmount = b.getIsVariable()
-                    ? histPrev.getOrDefault(b.getId(), 0)
-                    : Optional.ofNullable(b.getAmount()).orElse(0);
-
+        double prevMonthAmount = b.getIsVariable()
+                ? histPrev.getOrDefault(b.getId(), 0.0)
+                : Optional.ofNullable(b.getAmount()).orElse(0.0);
             monthTotal += thisMonthAmount;
             prevTotal += prevMonthAmount;
 
@@ -149,12 +145,12 @@ public class BillService {
             }
         }
 
-        int momDiff = monthTotal - prevTotal;
+        double monDiff = monthTotal - prevTotal;
 
         BillListViewResponse.Sections sections =
                 new BillListViewResponse.Sections(util, fixed, variable);
 
-        return new BillListViewResponse(monthStr, totalCount, monthTotal, momDiff, sections);
+        return new BillListViewResponse(monthStr, monthTotal, monDiff, sections);
     }
 
 }

@@ -12,14 +12,8 @@ public class BillCreateRequest {
     @NotBlank
     private String name;
 
-    @NotNull
-    private BillCategory category; // 주거/생활취미/기타
-
-    @NotNull
-    private BillType type; // 수도세/전기세/가스난방/관리비/기타
-
-    @NotNull @Min(0)
-    private Integer amount;
+    @NotNull @Min(0) // 소수점 가능
+    private Double amount = 0.0;
 
     @NotNull
     private Boolean isVariable;
@@ -27,4 +21,5 @@ public class BillCreateRequest {
     // null 또는 1~31
     @Min(1) @Max(31)
     private Integer dueDate;
+
 }

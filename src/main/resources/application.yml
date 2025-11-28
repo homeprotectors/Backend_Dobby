@@ -1,10 +1,28 @@
+# 공통
+server:
+  port: 8080
+  forward-headers-strategy: native
+
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}  # 기본은 local
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
 
+logging:
+  level:
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.springframework.security: INFO
+
+# ===== local =====
 ---
-
-# local 설정
 spring:
   config:
     activate:
@@ -14,27 +32,53 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+
 logging:
   level:
-    org:
-      springframework:
-        web: DEBUG
-  exception-conversion-word: "%ex{short, 0}"
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
 
-server:
-  port: 8080
+# 내부 JWT 설정
+app:
+  jwt:
+    iss: duemate-api
+    aud: duemate-app
+    access-ttl-min: 15
+    refresh-ttl-days: 21
+    # 키 파일 or 환경변수(Base64) 둘 중 하나 사용
+    private-key-pem-path: ${APP_JWT_PRIVATE_PEM_PATH:./secrets/jwt_private.pem}
+    public-key-pem-path:  ${APP_JWT_PUBLIC_PEM_PATH:./secrets/jwt_public.pem}
 
+# 애플
+apple:
+  team-id: ${APPLE_TEAM_ID:}
+  key-id: ${APPLE_KEY_ID:}
+  client-id: ${APPLE_CLIENT_ID:}
+  private-key-p8: ${APPLE_PRIVATE_KEY_P8:}   # prod에서만 채움
+  jwks-url: https://appleid.apple.com/auth/keys
+
+# CORS(필요시)
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# ===== prod =====
 ---
-
-# production 설정
 spring:
   config:
     activate:
@@ -44,14 +88,46 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 4
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: false       # 콘솔 SQL 출력 비활성화 (보안 + 성능)
+    show-sql: false
     properties:
       hibernate:
         format_sql: false
 
-server:
-  port: 8080
+logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+
+app:
+  jwt:
+    iss: ${APP_JWT_ISS}
+    aud: ${APP_JWT_AUD}
+    access-ttl-min: ${APP_JWT_ACCESS_TTL_MIN:15}
+    refresh-ttl-days: ${APP_JWT_REFRESH_TTL_DAYS:21}
+    private-key-pem-path: ${APP_JWT_PRIVATE_PEM_PATH:/run/secrets/jwt_private.pem}
+    public-key-pem-path:  ${APP_JWT_PUBLIC_PEM_PATH:/run/secrets/jwt_public.pem}
+
+apple:
+  team-id: ${APPLE_TEAM_ID}
+  key-id: ${APPLE_KEY_ID}
+  client-id: ${APPLE_CLIENT_ID}
+  private-key-p8: ${APPLE_PRIVATE_KEY_P8}
+  jwks-url: https://appleid.apple.com/auth/keys
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

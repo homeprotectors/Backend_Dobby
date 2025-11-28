@@ -45,9 +45,6 @@ public class BillHistoryService {
         h.setBill(bill);
         h.setYearMonth(ym);
         h.setAmount(req.getAmount());
-        if (req.getPaidDate() != null) {
-            h.setPaidDate(LocalDate.parse(req.getPaidDate()));
-        }
 
         try {
             return billHistoryRepository.save(h);
@@ -58,14 +55,14 @@ public class BillHistoryService {
     }
 
     @Transactional
-    public BillHistory update(Long historyId, @Valid BillHistoryEditRequest req) {
-        BillHistory h = billHistoryRepository.findById(historyId)
+    public BillHistory update(@Valid BillHistoryEditRequest req) {
+        BillHistory h = billHistoryRepository.findByGroupIdAndBill_IdAndYearMonth(
+                        GROUP_ID,
+                        req.getBillId(),
+                        LocalDate.parse(req.getMonth() + "-01"))
                 .orElseThrow(() -> new NoSuchElementException("history not found"));
 
         if (req.getAmount() != null) h.setAmount(req.getAmount());
-        if (req.getPaidDate() != null) {
-            h.setPaidDate(LocalDate.parse(req.getPaidDate()));
-        }
         return h; // 변경감지로 flush
     }
 

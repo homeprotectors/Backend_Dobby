@@ -18,7 +18,7 @@ public class BillCreateResponse {
     private String name;
 
     @Schema(description = "청구서 금액")
-    private Integer amount;
+    private Double amount;
 
     @Schema(description = "매월 청구 일자")
     private Integer dueDate;

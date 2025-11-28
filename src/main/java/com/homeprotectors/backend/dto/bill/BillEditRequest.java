@@ -10,12 +10,8 @@ public class BillEditRequest {
 
     private String name;
 
-    private BillCategory category;
-
-    private BillType type;
-
     @Min(0)
-    private Integer amount;
+    private Double amount;
 
     private Boolean isVariable;
 

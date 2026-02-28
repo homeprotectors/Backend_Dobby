@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 .env
 local.sh
+PROJECT_STRUCTURE_SUMMARY.md
 
 ### STS ###
 .apt_generated

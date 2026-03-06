@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByInstallId(UUID installId);
     Optional<User> findByPublicId(UUID publicId);
+    long countByGroupId(Long groupId);
 }

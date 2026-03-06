@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Data
 @Service
@@ -27,16 +28,15 @@ public class BillService {
 
     private final BillRepository billRepository;
     private final BillHistoryRepository billHistoryRepository;
-
-
-    private static final Long GROUP_ID = 1L;
-    private static final Long USER_ID = 1L;
+    private final UserContextService userContextService;
 
     @Transactional
-    public Bill createBill(@Valid BillCreateRequest req) {
+    public Bill createBill(@Valid BillCreateRequest req, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        Long userId = userContextService.requireInternalUserId(currentUserId);
         Bill b = new Bill();
-        b.setGroupId(GROUP_ID);
-        b.setCreatedBy(USER_ID);
+        b.setGroupId(groupId);
+        b.setCreatedBy(userId);
         b.setName(req.getName());
         b.setAmount(req.getAmount());
         b.setIsVariable(req.getIsVariable());
@@ -51,8 +51,9 @@ public class BillService {
     }
 
     @Transactional
-    public Bill updateBill(Long billId, @Valid BillEditRequest req) {
-        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+    public Bill updateBill(Long billId, @Valid BillEditRequest req, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        Bill b = billRepository.findByIdAndGroupId(billId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
 
         if (req.getName() != null) b.setName(req.getName());
@@ -68,14 +69,16 @@ public class BillService {
     }
 
     @Transactional
-    public void softDeleteBill(Long billId) {
-        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+    public void softDeleteBill(Long billId, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        Bill b = billRepository.findByIdAndGroupId(billId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
         billRepository.delete(b); // @SQLDelete 로 deleted_at=now()
     }
     @Transactional
-    public void hideBill(Long billId) {
-        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+    public void hideBill(Long billId, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        Bill b = billRepository.findByIdAndGroupId(billId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
         LocalDate hiddenFrom = LocalDate.now().withDayOfMonth(1);
         b.setHiddenFrom(hiddenFrom);
@@ -83,20 +86,21 @@ public class BillService {
     }
 
     @Transactional
-    public void unhideBill(Long billId) {
-        Bill b = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+    public void unhideBill(Long billId, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        Bill b = billRepository.findByIdAndGroupId(billId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
         b.setHiddenFrom(null);
         billRepository.save(b);
     }
 
     @Transactional
-    public BillListViewResponse getListView(String monthStr) {
+    public BillListViewResponse getListView(String monthStr, UUID currentUserId) {
         // month 파싱 → 그 달 1일
         LocalDate month = LocalDate.parse(monthStr + "-01");
         LocalDate prev = month.minusMonths(1);
 
-        Long groupId = GROUP_ID;
+        Long groupId = userContextService.requireGroupId(currentUserId);
 
         // 전체 bills (soft-deleted 제외)
         List<Bill> bills = billRepository.findByGroupId(groupId);

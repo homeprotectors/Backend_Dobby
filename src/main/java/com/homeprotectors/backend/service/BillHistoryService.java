@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,25 +24,26 @@ public class BillHistoryService {
     private final BillHistoryRepository billHistoryRepository;
 
     // TODO: 실제 인증/그룹 주입
-    private static final Long GROUP_ID = 1L;
-    private static final Long USER_ID = 1L;
+    private final UserContextService userContextService;
 
     @Transactional
-    public BillHistory create(@Valid BillHistoryCreateRequest req) {
+    public BillHistory create(@Valid BillHistoryCreateRequest req, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        Long userId = userContextService.requireInternalUserId(currentUserId);
         Long billId = req.getBillId();
 
-        Bill bill = billRepository.findByIdAndGroupId(billId, GROUP_ID)
+        Bill bill = billRepository.findByIdAndGroupId(billId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("bill not found"));
 
         LocalDate ym = LocalDate.parse(req.getMonth() + "-01");
 
         // 중복 선체크(가독성/명시적 409 처리용)
-        billHistoryRepository.findByGroupIdAndBill_IdAndYearMonth(GROUP_ID, billId, ym)
+        billHistoryRepository.findByGroupIdAndBill_IdAndYearMonth(groupId, billId, ym)
                 .ifPresent(x -> { throw new IllegalStateException("history exists for month"); });
 
         BillHistory h = new BillHistory();
-        h.setGroupId(GROUP_ID);
-        h.setPaidBy(USER_ID);
+        h.setGroupId(groupId);
+        h.setPaidBy(userId);
         h.setBill(bill);
         h.setYearMonth(ym);
         h.setAmount(req.getAmount());
@@ -55,11 +57,9 @@ public class BillHistoryService {
     }
 
     @Transactional
-    public BillHistory update(@Valid BillHistoryEditRequest req) {
-        BillHistory h = billHistoryRepository.findByGroupIdAndBill_IdAndYearMonth(
-                        GROUP_ID,
-                        req.getBillId(),
-                        LocalDate.parse(req.getMonth() + "-01"))
+    public BillHistory update(Long historyId, @Valid BillHistoryEditRequest req, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        BillHistory h = billHistoryRepository.findByIdAndGroupId(historyId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("history not found"));
 
         if (req.getAmount() != null) h.setAmount(req.getAmount());
@@ -67,8 +67,9 @@ public class BillHistoryService {
     }
 
     @Transactional
-    public void delete(Long historyId) {
-        BillHistory h = billHistoryRepository.findById(historyId)
+    public void delete(Long historyId, UUID currentUserId) {
+        Long groupId = userContextService.requireGroupId(currentUserId);
+        BillHistory h = billHistoryRepository.findByIdAndGroupId(historyId, groupId)
                 .orElseThrow(() -> new NoSuchElementException("history not found"));
         billHistoryRepository.delete(h);
     }

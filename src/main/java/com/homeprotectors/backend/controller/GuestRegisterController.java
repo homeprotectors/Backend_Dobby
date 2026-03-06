@@ -5,7 +5,6 @@ import com.homeprotectors.backend.dto.common.GuestRegisterResponse;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.exception.ApiException;
 import com.homeprotectors.backend.service.GuestRegisterService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +23,6 @@ public class GuestRegisterController {
     }
 
     @PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @SecurityRequirements
     public ResponseEntity<ResponseDTO<GuestRegisterResponse>> register(@Valid @RequestBody GuestRegisterRequest request) {
         UUID installId = parseUuidOrThrow(request.installId(), "installId");
         UUID userId = guestRegisterService.registerGuest(installId);

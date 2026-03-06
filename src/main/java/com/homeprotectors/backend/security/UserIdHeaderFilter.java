@@ -1,11 +1,13 @@
 package com.homeprotectors.backend.security;
 
-import com.homeprotectors.backend.exception.ApiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.homeprotectors.backend.dto.common.ResponseDTO;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -16,6 +18,11 @@ public class UserIdHeaderFilter extends OncePerRequestFilter {
 
     public static final String ATTR_CURRENT_USER_ID = "currentUserId";
     private static final String HEADER_USER_ID = "X-USER-ID";
+    private final ObjectMapper objectMapper;
+
+    public UserIdHeaderFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     // Public endpoints that should stay accessible without a user header.
     private final Set<String> publicPaths = Set.of(
@@ -52,17 +59,26 @@ public class UserIdHeaderFilter extends OncePerRequestFilter {
 
         String raw = request.getHeader(HEADER_USER_ID);
         if (raw == null || raw.isBlank()) {
-            throw new ApiException("MISSING_USER_ID", "X-USER-ID header is required.");
+            writeBadRequest(response, "X-USER-ID header is required.");
+            return;
         }
 
         UUID userId;
         try {
             userId = UUID.fromString(raw.trim());
         } catch (Exception e) {
-            throw new ApiException("INVALID_USER_ID", "X-USER-ID must be a valid UUID.");
+            writeBadRequest(response, "X-USER-ID must be a valid UUID.");
+            return;
         }
 
         request.setAttribute(ATTR_CURRENT_USER_ID, userId);
         filterChain.doFilter(request, response);
+    }
+
+    private void writeBadRequest(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        ResponseDTO<Object> body = new ResponseDTO<>(false, message, null);
+        response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 }

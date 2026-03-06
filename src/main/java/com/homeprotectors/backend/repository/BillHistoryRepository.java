@@ -14,8 +14,6 @@ public interface BillHistoryRepository extends JpaRepository<BillHistory, Long> 
 
     Optional<BillHistory> findByGroupIdAndBill_IdAndYearMonth(Long groupId, Long billId, LocalDate yearMonth);
 
-    Optional<BillHistory> findByIdAndGroupId(Long id, Long groupId);
-
     @Query("""
         select coalesce(sum(h.amount), 0)
         from BillHistory h

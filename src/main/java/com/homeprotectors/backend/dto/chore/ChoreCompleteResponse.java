@@ -6,13 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class ChoreCompleteResponse {
     private Long id;
-    private UUID groupPublicId;
+    private Long groupId;
     private String title;
     private RoomCategory roomCategory;
     private RecurrenceType recurrenceType;

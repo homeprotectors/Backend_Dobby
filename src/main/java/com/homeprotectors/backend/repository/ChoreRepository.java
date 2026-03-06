@@ -8,15 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 
 public interface ChoreRepository extends JpaRepository<Chore, Long> {
 
     List<Chore> findByGroupId(Long groupId);
-
-    Optional<Chore> findByIdAndGroupId(Long id, Long groupId);
 
     // 오버듀 + 이번주~다음달 범위를 한 번에 조회
     @Query("""

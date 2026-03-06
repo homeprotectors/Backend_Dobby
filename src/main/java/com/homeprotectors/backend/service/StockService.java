@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Data
@@ -25,28 +24,28 @@ public class StockService {
 
     private final StockRepository stockRepository;
     private final GroupRepository groupRepository;
-    private final UserContextService userContextService;
 
-    public StockCreateResponse createStock(@Valid StockCreateRequest request, UUID currentUserId) {
-        Long groupId = userContextService.requireGroupId(currentUserId);
-        Long userId = userContextService.requireInternalUserId(currentUserId);
-
+    public StockCreateResponse createStock(@Valid StockCreateRequest request) {
         Stock stock = new Stock();
-        stock.setGroupId(groupId);
-        stock.setCreatedBy(userId);
+        stock.setGroupId(1L); // TODO: 임시 group ID
+        stock.setCreatedBy(1L); // TODO: 임시 생성자 ID, 실제로는 인증된 사용자 ID로 설정해야 함
         stock.setName(request.getName());
         stock.setUnitQuantity(request.getUnitQuantity());
         stock.setUnitDays(request.getUnitDays());
         stock.setUpdatedQuantity(request.getUpdatedQuantity());
 
+        // UpdatedQuantity가 업데이트됐을 때만 현재 시간으로 UpdatedQuantityDate 설정
         if (request.getUpdatedQuantity() != null) {
             stock.setUpdatedQuantityDate(LocalDate.now());
         }
 
+        // 현재 시간으로 createdAt 설정
         stock.setCreatedAt(LocalDateTime.now());
+
         stockRepository.save(stock);
 
         LocalDate today = LocalDate.now();
+
         int currentQuantity = calculateCurrentQuantity(stock, today);
         int remainingDays = calculateRemainingDays(stock, currentQuantity);
 
@@ -60,10 +59,18 @@ public class StockService {
         );
     }
 
-    public List<StockListItemResponse> getStockList(UUID currentUserId) {
-        Long groupId = userContextService.requireGroupId(currentUserId);
+    public List<StockListItemResponse> getStockList() {
+        Long groupId = 1L; // TODO: 인증 기반으로 동적으로 받을 예정
+
         List<Stock> stocks = stockRepository.findByGroupId(groupId);
 
+        // currentQuantity 계산 로직
+        // 필드가 아닌 변수로 currentQuantity를 계산해서 response로 반환
+
+        // updatedQuantityDate로부터 현재까지의 일수를 계산
+        // unitQuantity / unitDays로 하루에 소비되는 단위 수량 계산
+        // 현재 예상 currentQuantity = updatedQuantity - (daysSinceUpdate * dailyConsumption)
+        // crruentQuantity = updatedQuantity - (daysSinceUpdate * (unitQuantity / unitDays))
         LocalDate today = LocalDate.now();
         return stocks.stream()
                 .map(stock -> {
@@ -82,11 +89,11 @@ public class StockService {
                 .collect(Collectors.toList());
     }
 
-    public StockCreateResponse editStock(Long stockId, StockCreateRequest request, UUID currentUserId) {
-        Long groupId = userContextService.requireGroupId(currentUserId);
-        Stock stock = stockRepository.findByIdAndGroupId(stockId, groupId)
+    public StockCreateResponse editStock(Long stockId, StockCreateRequest request) {
+        Stock stock = stockRepository.findById(stockId)
                 .orElseThrow(() -> new IllegalArgumentException("Stock not found"));
 
+        // 값이 넘어온 것들만 업데이트- 없으면 기존 값 유지
         if (request.getName() != null) {
             stock.setName(request.getName());
         }
@@ -98,6 +105,8 @@ public class StockService {
         }
         if (request.getUpdatedQuantity() != null) {
             stock.setUpdatedQuantity(request.getUpdatedQuantity());
+
+            // UpdatedQuantity가 업데이트됐을 때만 현재 시간으로 UpdatedQuantityDate 설정
             stock.setUpdatedQuantityDate(LocalDate.now());
         }
 
@@ -117,10 +126,11 @@ public class StockService {
         );
     }
 
-    public void deleteStock(Long stockId, UUID currentUserId) {
-        Long groupId = userContextService.requireGroupId(currentUserId);
-        Stock stock = stockRepository.findByIdAndGroupId(stockId, groupId)
+    public void deleteStock(Long stockId) {
+        Stock stock = stockRepository.findById(stockId)
                 .orElseThrow(() -> new EntityNotFoundException("Stock not found"));
+
+        // TODO: 인증 사용자 그룹 소속 여부 확인 (JWT 인증 기반으로 구현 예정)
         stockRepository.delete(stock);
     }
 
@@ -137,4 +147,5 @@ public class StockService {
         double dailyConsumption = (double) stock.getUnitQuantity() / stock.getUnitDays();
         return Math.max(0, (int) Math.round(currentQuantity / dailyConsumption));
     }
+
 }

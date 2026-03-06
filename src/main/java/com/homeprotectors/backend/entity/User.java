@@ -25,9 +25,6 @@ public class User {
     @Column(name = "install_id", nullable = false, unique = true, updatable = false)
     private UUID installId;
 
-    @Column(name = "group_id", nullable = false)
-    private Long groupId;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -36,10 +33,9 @@ public class User {
 
     protected User() {}
 
-    public User(UUID publicId, UUID installId, Long groupId) {
+    public User(UUID publicId, UUID installId) {
         this.publicId = publicId;
         this.installId = installId;
-        this.groupId = groupId;
     }
 
     @PrePersist
@@ -57,7 +53,6 @@ public class User {
     public Long getId() { return id; }
     public UUID getPublicId() { return publicId; }
     public UUID getInstallId() { return installId; }
-    public Long getGroupId() { return groupId; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
 }

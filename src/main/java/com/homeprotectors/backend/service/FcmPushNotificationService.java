@@ -10,17 +10,13 @@ import com.google.firebase.messaging.SendResponse;
 import com.homeprotectors.backend.dto.notification.PushNotificationCommand;
 import com.homeprotectors.backend.dto.notification.PushNotificationResult;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-@Service
 @RequiredArgsConstructor
-@ConditionalOnBean(FirebaseMessaging.class)
 public class FcmPushNotificationService implements PushNotificationService {
 
     private static final int MAX_BATCH_SIZE = 500;

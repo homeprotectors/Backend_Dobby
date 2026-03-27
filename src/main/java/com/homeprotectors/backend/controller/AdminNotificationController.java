@@ -5,6 +5,7 @@ import com.homeprotectors.backend.dto.notification.DailyReminderDispatchSummary;
 import com.homeprotectors.backend.exception.ApiException;
 import com.homeprotectors.backend.service.NotificationDispatchService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,7 @@ public class AdminNotificationController {
             summary = "수동 알림 발송",
             description = "Immediately dispatch the daily chore reminder flow for testing"
     )
+    @SecurityRequirements
     @PostMapping("/daily-chore-reminder/dispatch")
     public ResponseEntity<ResponseDTO<DailyReminderDispatchSummary>> dispatchDailyChoreReminder(
             @RequestHeader("X-ADMIN-SECRET") String adminSecret

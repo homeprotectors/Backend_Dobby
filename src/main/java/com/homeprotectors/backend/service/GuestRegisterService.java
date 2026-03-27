@@ -16,10 +16,16 @@ public class GuestRegisterService {
 
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
+    private final DefaultItemSeedService defaultItemSeedService;
 
-    public GuestRegisterService(UserRepository userRepository, GroupRepository groupRepository) {
+    public GuestRegisterService(
+            UserRepository userRepository,
+            GroupRepository groupRepository,
+            DefaultItemSeedService defaultItemSeedService
+    ) {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
+        this.defaultItemSeedService = defaultItemSeedService;
     }
 
     @Transactional
@@ -36,6 +42,7 @@ public class GuestRegisterService {
 
             User user = new User(UUID.randomUUID(), installId, group.getId());
             userRepository.saveAndFlush(user);
+            defaultItemSeedService.seedDefaults(group.getId(), user.getId());
             return user.getPublicId();
         } catch (DataIntegrityViolationException e) {
             cleanupOrphanGroup(createdGroupId);

@@ -21,6 +21,19 @@ logging:
     org.hibernate.SQL: INFO
     org.springframework.security: INFO
 
+app:
+  push:
+    enabled: ${APP_PUSH_ENABLED:false}
+    daily-chore-reminder:
+      cron: ${APP_PUSH_DAILY_CHORE_REMINDER_CRON:0 0 7 * * *}
+      zone: ${APP_PUSH_DAILY_CHORE_REMINDER_ZONE:Asia/Seoul}
+    manual-dispatch:
+      enabled: ${APP_PUSH_MANUAL_DISPATCH_ENABLED:false}
+      secret: ${APP_PUSH_MANUAL_DISPATCH_SECRET:}
+    fcm:
+      credentials-path: ${APP_PUSH_FCM_CREDENTIALS_PATH:}
+      project-id: ${APP_PUSH_FCM_PROJECT_ID:}
+
 # ===== local =====
 ---
 spring:

@@ -18,6 +18,8 @@ public interface ChoreRepository extends JpaRepository<Chore, Long> {
 
     Optional<Chore> findByIdAndGroupId(Long id, Long groupId);
 
+    long countByGroupIdAndNextDueLessThanEqual(Long groupId, LocalDate date);
+
     // 오버듀 + 이번주~다음달 범위를 한 번에 조회
     @Query("""
         select c from Chore c

@@ -27,6 +27,7 @@ public class UserIdHeaderFilter extends OncePerRequestFilter {
     // Public endpoints that should stay accessible without a user header.
     private final Set<String> publicPaths = Set.of(
             "/api/guests/register",
+            "/api/admin/notifications/daily-chore-reminder/dispatch",
             "/actuator/health"
     );
 

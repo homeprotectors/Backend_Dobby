@@ -33,8 +33,12 @@ public class NotificationDispatchService {
     private final DeviceTokenRepository deviceTokenRepository;
 
     public DailyReminderDispatchSummary dispatchDailyChoreReminders() {
+        return dispatchDailyChoreReminders(false);
+    }
+
+    public DailyReminderDispatchSummary dispatchDailyChoreReminders(boolean ignoreAlreadySentToday) {
         LocalDate today = LocalDate.now(KST);
-        List<DailyChoreReminderTarget> targets = dailyNotificationTargetService.getDailyChoreReminderTargets();
+        List<DailyChoreReminderTarget> targets = dailyNotificationTargetService.getDailyChoreReminderTargets(ignoreAlreadySentToday);
         List<DailyReminderDispatchItem> items = new ArrayList<>();
         int successCount = 0;
         int failureCount = 0;
@@ -52,7 +56,9 @@ public class NotificationDispatchService {
             );
 
             PushNotificationResult result = pushNotificationService.send(command);
-            saveDeliveryLog(target, result, today);
+            if (!ignoreAlreadySentToday) {
+                saveDeliveryLog(target, result, today);
+            }
             disableInvalidTokens(result.invalidTokens());
 
             successCount += result.successCount();

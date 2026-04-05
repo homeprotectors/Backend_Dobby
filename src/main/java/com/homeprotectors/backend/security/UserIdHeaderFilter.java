@@ -28,6 +28,7 @@ public class UserIdHeaderFilter extends OncePerRequestFilter {
     private final Set<String> publicPaths = Set.of(
             "/api/guests/register",
             "/api/admin/notifications/daily-chore-reminder/dispatch",
+            "/api/admin/notifications/daily-chore-reminder/test-dispatch",
             "/actuator/health"
     );
 

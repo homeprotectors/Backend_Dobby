@@ -10,12 +10,14 @@ import com.google.firebase.messaging.SendResponse;
 import com.homeprotectors.backend.dto.notification.PushNotificationCommand;
 import com.homeprotectors.backend.dto.notification.PushNotificationResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RequiredArgsConstructor
 public class FcmPushNotificationService implements PushNotificationService {
 
@@ -48,12 +50,28 @@ public class FcmPushNotificationService implements PushNotificationService {
                     String token = batchTokens.get(i);
                     if (!sendResponse.isSuccessful()) {
                         failedTokens.add(token);
+                        FirebaseMessagingException exception = sendResponse.getException();
+                        log.warn(
+                                "FCM send failed for token. tokenSuffix={}, errorCode={}, messagingErrorCode={}, message={}",
+                                maskToken(token),
+                                exception == null ? null : exception.getErrorCode(),
+                                exception == null ? null : exception.getMessagingErrorCode(),
+                                exception == null ? null : exception.getMessage()
+                        );
                         if (isInvalidToken(sendResponse.getException())) {
                             invalidTokens.add(token);
                         }
                     }
                 }
             } catch (FirebaseMessagingException e) {
+                log.error(
+                        "FCM batch send failed. batchSize={}, errorCode={}, messagingErrorCode={}, message={}",
+                        batchTokens.size(),
+                        e.getErrorCode(),
+                        e.getMessagingErrorCode(),
+                        e.getMessage(),
+                        e
+                );
                 failedTokens.addAll(batchTokens);
             }
         }
@@ -108,5 +126,15 @@ public class FcmPushNotificationService implements PushNotificationService {
 
     private List<String> distinct(List<String> values) {
         return new ArrayList<>(new LinkedHashSet<>(values));
+    }
+
+    private String maskToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "(empty)";
+        }
+
+        String trimmed = token.trim();
+        int visibleLength = Math.min(8, trimmed.length());
+        return trimmed.substring(trimmed.length() - visibleLength);
     }
 }

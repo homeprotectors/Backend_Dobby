@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +37,9 @@ class DailyNotificationTargetServiceTest {
 
     @Mock
     private NotificationDeliveryLogRepository notificationDeliveryLogRepository;
+
+    @Mock
+    private PushNotificationTemplateProvider pushNotificationTemplateProvider;
 
     @InjectMocks
     private DailyNotificationTargetService dailyNotificationTargetService;
@@ -76,6 +78,10 @@ class DailyNotificationTargetServiceTest {
                 .thenReturn(true);
         when(choreRepository.countByGroupIdAndNextDueLessThanEqual(eq(100L), any()))
                 .thenReturn(3L);
+        when(pushNotificationTemplateProvider.getDailyChoreReminderTitle())
+                .thenReturn("✨ 좋은 아침이에요!");
+        when(pushNotificationTemplateProvider.renderDailyChoreReminderBody(3L))
+                .thenReturn("오늘 할 집안일이 3개 있어요. 앱에서 이번 주 할 일을 확인해보세요!");
 
         List<DailyChoreReminderTarget> targets = dailyNotificationTargetService.getDailyChoreReminderTargets();
 
@@ -83,7 +89,39 @@ class DailyNotificationTargetServiceTest {
         assertThat(targets.getFirst().userId()).isEqualTo(10L);
         assertThat(targets.getFirst().choreCount()).isEqualTo(3L);
         assertThat(targets.getFirst().pushTokens()).containsExactly("token-1");
-        assertThat(targets.getFirst().body()).isEqualTo("오늘 할 일 3건 확인하세요");
+        assertThat(targets.getFirst().title()).isEqualTo("✨ 좋은 아침이에요!");
+        assertThat(targets.getFirst().body()).isEqualTo("오늘 할 집안일이 3개 있어요. 앱에서 이번 주 할 일을 확인해보세요!");
+    }
+
+    @Test
+    void getDailyChoreReminderTargets_withIgnoreAlreadySentToday_keepsAlreadySentUsersEligible() {
+        DeviceToken token = new DeviceToken();
+        token.setId(1L);
+        token.setUserId(20L);
+        token.setPlatform(DevicePlatform.IOS);
+        token.setPushToken("token-2");
+        token.setEnabled(true);
+        token.setLastSeenAt(OffsetDateTime.now());
+
+        User alreadySentUser = new User(UUID.randomUUID(), UUID.randomUUID(), 200L);
+        setUserId(alreadySentUser, 20L);
+
+        when(deviceTokenRepository.findByEnabledTrueAndLastSeenAtAfter(any()))
+                .thenReturn(List.of(token));
+        when(userRepository.findAllById(any()))
+                .thenReturn(List.of(alreadySentUser));
+        when(choreRepository.countByGroupIdAndNextDueLessThanEqual(eq(200L), any()))
+                .thenReturn(1L);
+        when(pushNotificationTemplateProvider.getDailyChoreReminderTitle())
+                .thenReturn("✨ 좋은 아침이에요!");
+        when(pushNotificationTemplateProvider.renderDailyChoreReminderBody(1L))
+                .thenReturn("오늘 할 집안일이 1개 있어요. 앱에서 이번 주 할 일을 확인해보세요!");
+
+        List<DailyChoreReminderTarget> targets = dailyNotificationTargetService.getDailyChoreReminderTargets(true);
+
+        assertThat(targets).hasSize(1);
+        assertThat(targets.getFirst().userId()).isEqualTo(20L);
+        assertThat(targets.getFirst().title()).isEqualTo("✨ 좋은 아침이에요!");
     }
 
     private void setUserId(User user, Long id) {

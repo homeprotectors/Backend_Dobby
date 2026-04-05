@@ -32,8 +32,13 @@ public class DailyNotificationTargetService {
     private final UserRepository userRepository;
     private final ChoreRepository choreRepository;
     private final NotificationDeliveryLogRepository notificationDeliveryLogRepository;
+    private final PushNotificationTemplateProvider pushNotificationTemplateProvider;
 
     public List<DailyChoreReminderTarget> getDailyChoreReminderTargets() {
+        return getDailyChoreReminderTargets(false);
+    }
+
+    public List<DailyChoreReminderTarget> getDailyChoreReminderTargets(boolean ignoreAlreadySentToday) {
         LocalDate today = LocalDate.now(KST);
         OffsetDateTime threshold = OffsetDateTime.now(KST).minusDays(30);
 
@@ -54,7 +59,7 @@ public class DailyNotificationTargetService {
         List<DailyChoreReminderTarget> targets = new ArrayList<>();
 
         for (User user : users) {
-            if (notificationDeliveryLogRepository.existsByUserIdAndNotificationTypeAndDeliveryDate(
+            if (!ignoreAlreadySentToday && notificationDeliveryLogRepository.existsByUserIdAndNotificationTypeAndDeliveryDate(
                     user.getId(),
                     NOTIFICATION_TYPE,
                     today
@@ -85,8 +90,8 @@ public class DailyNotificationTargetService {
                     user.getId(),
                     pushTokens,
                     choreCount,
-                    "오늘 할 일 알림",
-                    "오늘 할 일 " + choreCount + "건 확인하세요"
+                    pushNotificationTemplateProvider.getDailyChoreReminderTitle(),
+                    pushNotificationTemplateProvider.renderDailyChoreReminderBody(choreCount)
             ));
         }
 

@@ -21,6 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,7 +59,7 @@ class NotificationDispatchServiceTest {
         invalidToken.setPushToken("token-2");
         invalidToken.setEnabled(true);
 
-        when(dailyNotificationTargetService.getDailyChoreReminderTargets()).thenReturn(List.of(target));
+        when(dailyNotificationTargetService.getDailyChoreReminderTargets(false)).thenReturn(List.of(target));
         when(pushNotificationService.send(any()))
                 .thenReturn(new PushNotificationResult(1, 1, List.of("token-2"), List.of("token-2")));
         when(deviceTokenRepository.findByPushTokenIn(List.of("token-2")))
@@ -80,5 +81,26 @@ class NotificationDispatchServiceTest {
 
         verify(deviceTokenRepository).saveAll(any());
         assertThat(invalidToken.getEnabled()).isFalse();
+    }
+
+    @Test
+    void dispatchDailyChoreReminders_withIgnoreAlreadySentToday_passesTrueToTargetService() {
+        DailyChoreReminderTarget target = new DailyChoreReminderTarget(
+                10L,
+                List.of("token-1"),
+                1L,
+                "title",
+                "body"
+        );
+
+        when(dailyNotificationTargetService.getDailyChoreReminderTargets(true)).thenReturn(List.of(target));
+        when(pushNotificationService.send(any()))
+                .thenReturn(new PushNotificationResult(1, 0, List.of(), List.of()));
+
+        DailyReminderDispatchSummary summary = notificationDispatchService.dispatchDailyChoreReminders(true);
+
+        assertThat(summary.targetUserCount()).isEqualTo(1);
+        verify(dailyNotificationTargetService).getDailyChoreReminderTargets(true);
+        verify(notificationDeliveryLogRepository, never()).save(any());
     }
 }

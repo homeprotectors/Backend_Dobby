@@ -42,6 +42,21 @@ public class AdminNotificationController {
         return ResponseEntity.ok(new ResponseDTO<>(true, "Daily chore reminder dispatched", summary));
     }
 
+    @Operation(
+            summary = "테스트용 중복 무시 푸시 발송",
+            description = "Immediately dispatch the daily chore reminder flow for testing without checking today's delivery log"
+    )
+    @SecurityRequirements
+    @PostMapping("/daily-chore-reminder/test-dispatch")
+    public ResponseEntity<ResponseDTO<DailyReminderDispatchSummary>> testDispatchDailyChoreReminder(
+            @RequestHeader("X-ADMIN-SECRET") String adminSecret
+    ) {
+        validateManualDispatchAccess(adminSecret);
+
+        DailyReminderDispatchSummary summary = notificationDispatchService.dispatchDailyChoreReminders(true);
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Daily chore reminder test-dispatched", summary));
+    }
+
     private void validateManualDispatchAccess(String adminSecret) {
         // Keep this endpoint disabled by default because the project has no admin auth flow yet.
         if (!manualDispatchEnabled) {

@@ -123,7 +123,12 @@ public class ChoreService {
             throw new IllegalArgumentException("doneDate cannot be in the future.");
         }
 
-        LocalDate newNextDue = choreScheduleCalculator.calculateNextDue(chore.getRecurrenceType(), chore.getSelectedCycle(), doneDate);
+        LocalDate newNextDue = choreScheduleCalculator.calculateNextDue(
+                chore.getRecurrenceType(),
+                chore.getSelectedCycle(),
+                doneDate,
+                chore.getNextDue()
+        );
         chore.setNextDue(newNextDue);
         choreRepository.save(chore);
 

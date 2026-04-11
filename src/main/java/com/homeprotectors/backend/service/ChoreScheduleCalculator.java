@@ -32,20 +32,17 @@ public class ChoreScheduleCalculator {
         };
     }
 
-    public LocalDate calculateNextDue(RecurrenceType type, Set<String> selectedCycle, LocalDate doneDate) {
+    public LocalDate calculateNextDue(RecurrenceType type, Set<String> selectedCycle, LocalDate doneDate, LocalDate currentNextDue) {
+        LocalDate effectiveDue = currentNextDue != null && currentNextDue.isAfter(doneDate) ? currentNextDue : doneDate;
         return switch (type) {
-            case PER_WEEK -> doneDate.plusDays(7);
-            case PER_2WEEKS -> doneDate.plusDays(14);
-            case PER_MONTH -> doneDate.plusDays(30);
-            case FIXED_DAY -> findNextDayOfWeek(doneDate, selectedCycle);
-            case FIXED_DATE -> {
-                int day = doneDate.getDayOfMonth();
-                LocalDate nextMonth = doneDate.plusMonths(1);
-                yield nextMonth.withDayOfMonth(Math.min(day, nextMonth.lengthOfMonth()));
-            }
+            case PER_WEEK -> effectiveDue.plusDays(7);
+            case PER_2WEEKS -> effectiveDue.plusDays(14);
+            case PER_MONTH -> effectiveDue.plusDays(30);
+            case FIXED_DAY -> findNextDayOfWeek(effectiveDue, selectedCycle);
+            case FIXED_DATE -> nextDateByDateTokens(effectiveDue.plusDays(1), selectedCycle);
             case FIXED_MONTH -> {
-                int anchor = doneDate.getDayOfMonth();
-                LocalDate candidate = findNextSelectedMonth(doneDate, selectedCycle);
+                int anchor = effectiveDue.getDayOfMonth();
+                LocalDate candidate = findNextSelectedMonth(effectiveDue.plusDays(1), selectedCycle);
                 yield candidate.withDayOfMonth(Math.min(anchor, candidate.lengthOfMonth()));
             }
         };

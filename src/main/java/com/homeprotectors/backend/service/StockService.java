@@ -2,6 +2,7 @@ package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.stock.StockCreateRequest;
 import com.homeprotectors.backend.dto.stock.StockCreateResponse;
+import com.homeprotectors.backend.dto.stock.StockEditRequest;
 import com.homeprotectors.backend.dto.stock.StockListItemResponse;
 import com.homeprotectors.backend.entity.Stock;
 import com.homeprotectors.backend.repository.GroupRepository;
@@ -82,7 +83,7 @@ public class StockService {
                 .collect(Collectors.toList());
     }
 
-    public StockCreateResponse editStock(Long stockId, StockCreateRequest request, UUID currentUserId) {
+    public StockCreateResponse editStock(Long stockId, StockEditRequest request, UUID currentUserId) {
         Long groupId = userContextService.requireGroupId(currentUserId);
         Stock stock = stockRepository.findByIdAndGroupId(stockId, groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Stock not found"));
@@ -125,6 +126,10 @@ public class StockService {
     }
 
     private int calculateCurrentQuantity(Stock stock, LocalDate today) {
+        if (stock.getUpdatedQuantityDate() == null || stock.getUpdatedQuantity() == null) {
+            return 0;
+        }
+
         LocalDate updatedQuantityDate = stock.getUpdatedQuantityDate();
         long daysSinceUpdate = today.toEpochDay() - updatedQuantityDate.toEpochDay();
         double dailyConsumption = (double) stock.getUnitQuantity() / stock.getUnitDays();

@@ -2,6 +2,7 @@ package com.homeprotectors.backend.repository;
 
 import com.homeprotectors.backend.entity.BillHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
@@ -22,4 +23,8 @@ public interface BillHistoryRepository extends JpaRepository<BillHistory, Long> 
         where h.groupId = :groupId and h.yearMonth = :yearMonth
     """)
     Integer sumByGroupAndMonth(Long groupId, LocalDate yearMonth);
+
+    @Modifying
+    @Query("delete from BillHistory h where h.groupId = :groupId")
+    void deleteByGroupId(Long groupId);
 }

@@ -17,4 +17,6 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> 
     List<DeviceToken> findByEnabledTrueAndLastSeenAtAfter(OffsetDateTime threshold);
 
     List<DeviceToken> findByPushTokenIn(List<String> pushTokens);
+
+    void deleteByUserId(Long userId);
 }

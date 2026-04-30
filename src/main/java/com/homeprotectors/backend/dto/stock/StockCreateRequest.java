@@ -1,28 +1,35 @@
 package com.homeprotectors.backend.dto.stock;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Stock 생성할 때 사용자가 입력하는 데이터")
+@Schema(description = "Stock creation or update request")
 public class StockCreateRequest {
 
-    @Schema(description = "재고 이름", example = "생수")
+    @NotBlank(message = "name is required")
+    @Schema(description = "Stock name", example = "Dish Soap")
     private String name;
 
-    @Schema(description = "재고 수량", example = "8")
+    @NotNull(message = "unitQuantity is required")
+    @Min(value = 1, message = "unitQuantity must be at least 1")
+    @Schema(description = "Quantity per purchase unit", example = "8")
     private Integer unitQuantity;
 
-    @Schema(description = "단위 당 소비 주기 (일 단위)", example = "7")
+    @NotNull(message = "unitDays is required")
+    @Min(value = 1, message = "unitDays must be at least 1")
+    @Schema(description = "Expected days one unit lasts", example = "7")
     private Integer unitDays;
 
-    @Schema(description = "재고", example = "3")
+    @NotNull(message = "updatedQuantity is required")
+    @Min(value = 0, message = "updatedQuantity must be zero or greater")
+    @Schema(description = "Current quantity", example = "3")
     private Integer updatedQuantity;
-
 }

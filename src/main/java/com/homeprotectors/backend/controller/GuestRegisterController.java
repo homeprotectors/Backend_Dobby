@@ -1,10 +1,12 @@
 package com.homeprotectors.backend.controller;
 
+import com.homeprotectors.backend.dto.auth.AuthTokenResponse;
 import com.homeprotectors.backend.dto.common.GuestRegisterRequest;
 import com.homeprotectors.backend.dto.common.GuestRegisterResponse;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.exception.ApiException;
 import com.homeprotectors.backend.service.GuestRegisterService;
+import com.homeprotectors.backend.service.JwtTokenService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -18,9 +20,11 @@ import java.util.UUID;
 public class GuestRegisterController {
 
     private final GuestRegisterService guestRegisterService;
+    private final JwtTokenService jwtTokenService;
 
-    public GuestRegisterController(GuestRegisterService guestRegisterService) {
+    public GuestRegisterController(GuestRegisterService guestRegisterService, JwtTokenService jwtTokenService) {
         this.guestRegisterService = guestRegisterService;
+        this.jwtTokenService = jwtTokenService;
     }
 
     @PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -28,7 +32,8 @@ public class GuestRegisterController {
     public ResponseEntity<ResponseDTO<GuestRegisterResponse>> register(@Valid @RequestBody GuestRegisterRequest request) {
         UUID installId = parseUuidOrThrow(request.installId(), "installId");
         UUID userId = guestRegisterService.registerGuest(installId);
-        GuestRegisterResponse response = new GuestRegisterResponse(userId.toString());
+        AuthTokenResponse tokens = jwtTokenService.issueTokens(userId);
+        GuestRegisterResponse response = new GuestRegisterResponse(userId.toString(), tokens);
         return ResponseEntity.ok(new ResponseDTO<>(true, "Guest registered successfully", response));
     }
 

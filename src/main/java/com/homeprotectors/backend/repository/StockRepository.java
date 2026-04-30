@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface StockRepository extends JpaRepository<Stock, Long> {
     List<Stock> findByGroupId(Long groupId);
     Optional<Stock> findByIdAndGroupId(Long id, Long groupId);
+    void deleteByGroupId(Long groupId);
 }

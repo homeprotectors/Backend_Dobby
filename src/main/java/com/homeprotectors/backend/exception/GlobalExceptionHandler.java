@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.NoSuchElementException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -39,6 +41,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ResponseDTO<Object>> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return ResponseEntity
+                .status(404)
+                .body(new ResponseDTO<>(false, ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ResponseDTO<Object>> handleNoSuchElementException(NoSuchElementException ex) {
         return ResponseEntity
                 .status(404)
                 .body(new ResponseDTO<>(false, ex.getMessage(), null));

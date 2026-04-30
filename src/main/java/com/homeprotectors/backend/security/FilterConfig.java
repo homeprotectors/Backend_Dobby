@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.homeprotectors.backend.service.JwtTokenService;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,9 +10,12 @@ import org.springframework.context.annotation.Configuration;
 public class FilterConfig {
 
     @Bean
-    public FilterRegistrationBean<UserIdHeaderFilter> userIdHeaderFilter(ObjectMapper objectMapper) {
-        FilterRegistrationBean<UserIdHeaderFilter> bean = new FilterRegistrationBean<>();
-        bean.setFilter(new UserIdHeaderFilter(objectMapper));
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilter(
+            ObjectMapper objectMapper,
+            JwtTokenService jwtTokenService
+    ) {
+        FilterRegistrationBean<JwtAuthenticationFilter> bean = new FilterRegistrationBean<>();
+        bean.setFilter(new JwtAuthenticationFilter(objectMapper, jwtTokenService));
         bean.setOrder(1);
         return bean;
     }

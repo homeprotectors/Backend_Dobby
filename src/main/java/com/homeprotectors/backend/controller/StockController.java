@@ -3,6 +3,7 @@ package com.homeprotectors.backend.controller;
 import com.homeprotectors.backend.dto.common.ResponseDTO;
 import com.homeprotectors.backend.dto.stock.StockCreateRequest;
 import com.homeprotectors.backend.dto.stock.StockCreateResponse;
+import com.homeprotectors.backend.dto.stock.StockEditRequest;
 import com.homeprotectors.backend.dto.stock.StockListItemResponse;
 import com.homeprotectors.backend.service.StockService;
 import com.homeprotectors.backend.service.UserContextService;
@@ -52,7 +53,7 @@ public class StockController {
     @PutMapping("/{stockId}")
     public ResponseEntity<ResponseDTO<StockCreateResponse>> editStock(
             @PathVariable Long stockId,
-            @Valid @RequestBody StockCreateRequest request,
+            @RequestBody StockEditRequest request,
             @RequestAttribute("currentUserId") UUID currentUserId) {
         StockCreateResponse response = stockService.editStock(stockId, request, currentUserId);
 

@@ -12,4 +12,6 @@ public interface NotificationDeliveryLogRepository extends JpaRepository<Notific
             NotificationType notificationType,
             LocalDate deliveryDate
     );
+
+    void deleteByUserId(Long userId);
 }

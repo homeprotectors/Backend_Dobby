@@ -1,3 +1,5 @@
 package com.homeprotectors.backend.dto.common;
 
-public record GuestRegisterResponse(String userId) {}
+import com.homeprotectors.backend.dto.auth.AuthTokenResponse;
+
+public record GuestRegisterResponse(String userId, AuthTokenResponse tokens) {}

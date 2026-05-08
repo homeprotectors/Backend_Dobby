@@ -50,12 +50,12 @@ public class PushTokenService {
 
     @Transactional
     public PushTokenResponse updateTokenEnabled(
-            Long tokenId,
             PushTokenEnabledUpdateRequest request,
             UUID currentUserId
     ) {
         Long userId = userContextService.requireInternalUserId(currentUserId);
-        DeviceToken token = deviceTokenRepository.findByIdAndUserId(tokenId, userId)
+        String normalizedPushToken = request.pushToken().trim();
+        DeviceToken token = deviceTokenRepository.findByPushTokenAndUserId(normalizedPushToken, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Push token not found"));
 
         token.setEnabled(request.enabled());

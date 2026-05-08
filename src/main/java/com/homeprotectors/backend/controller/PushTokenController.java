@@ -1,6 +1,7 @@
 package com.homeprotectors.backend.controller;
 
 import com.homeprotectors.backend.dto.common.ResponseDTO;
+import com.homeprotectors.backend.dto.notification.PushTokenEnabledUpdateRequest;
 import com.homeprotectors.backend.dto.notification.PushTokenRegisterRequest;
 import com.homeprotectors.backend.dto.notification.PushTokenResponse;
 import com.homeprotectors.backend.service.PushTokenService;
@@ -44,5 +45,15 @@ public class PushTokenController {
             @RequestAttribute("currentUserId") UUID currentUserId) {
         pushTokenService.deleteToken(tokenId, currentUserId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Push token 알림 on/off", description = "Enable or disable push notifications for one of the current user's push tokens")
+    @PatchMapping("/{tokenId}/enabled")
+    public ResponseEntity<ResponseDTO<PushTokenResponse>> updateTokenEnabled(
+            @PathVariable Long tokenId,
+            @Valid @RequestBody PushTokenEnabledUpdateRequest request,
+            @RequestAttribute("currentUserId") UUID currentUserId) {
+        PushTokenResponse response = pushTokenService.updateTokenEnabled(tokenId, request, currentUserId);
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Push token notification setting updated", response));
     }
 }

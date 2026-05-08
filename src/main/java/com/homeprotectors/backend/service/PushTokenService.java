@@ -2,6 +2,7 @@ package com.homeprotectors.backend.service;
 
 import com.homeprotectors.backend.dto.notification.PushTokenRegisterRequest;
 import com.homeprotectors.backend.dto.notification.PushTokenResponse;
+import com.homeprotectors.backend.dto.notification.PushTokenEnabledUpdateRequest;
 import com.homeprotectors.backend.entity.DeviceToken;
 import com.homeprotectors.backend.repository.DeviceTokenRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -45,5 +46,20 @@ public class PushTokenService {
                 .orElseThrow(() -> new EntityNotFoundException("Push token not found"));
 
         deviceTokenRepository.delete(token);
+    }
+
+    @Transactional
+    public PushTokenResponse updateTokenEnabled(
+            Long tokenId,
+            PushTokenEnabledUpdateRequest request,
+            UUID currentUserId
+    ) {
+        Long userId = userContextService.requireInternalUserId(currentUserId);
+        DeviceToken token = deviceTokenRepository.findByIdAndUserId(tokenId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Push token not found"));
+
+        token.setEnabled(request.enabled());
+        DeviceToken saved = deviceTokenRepository.save(token);
+        return new PushTokenResponse(saved.getId(), saved.getPlatform(), Boolean.TRUE.equals(saved.getEnabled()));
     }
 }

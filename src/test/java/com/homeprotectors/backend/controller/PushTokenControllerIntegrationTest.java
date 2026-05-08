@@ -66,11 +66,12 @@ class PushTokenControllerIntegrationTest {
         token.setLastSeenAt(OffsetDateTime.now());
         token = deviceTokenRepository.saveAndFlush(token);
 
-        mockMvc.perform(patch("/api/push-tokens/{tokenId}/enabled", token.getId())
+        mockMvc.perform(patch("/api/push-tokens/me/enabled")
                         .requestAttr("currentUserId", user.getPublicId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "pushToken": "integration-token-1",
                                   "enabled": false
                                 }
                                 """))
@@ -96,11 +97,12 @@ class PushTokenControllerIntegrationTest {
         token.setLastSeenAt(OffsetDateTime.now());
         token = deviceTokenRepository.saveAndFlush(token);
 
-        mockMvc.perform(patch("/api/push-tokens/{tokenId}/enabled", token.getId())
+        mockMvc.perform(patch("/api/push-tokens/me/enabled")
                         .requestAttr("currentUserId", anotherUser.getPublicId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "pushToken": "integration-token-2",
                                   "enabled": false
                                 }
                                 """))

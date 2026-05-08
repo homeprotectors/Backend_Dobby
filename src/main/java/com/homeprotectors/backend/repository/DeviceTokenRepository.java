@@ -12,6 +12,8 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> 
 
     Optional<DeviceToken> findByIdAndUserId(Long id, Long userId);
 
+    Optional<DeviceToken> findByPushTokenAndUserId(String pushToken, Long userId);
+
     List<DeviceToken> findByUserIdAndEnabledTrue(Long userId);
 
     List<DeviceToken> findByEnabledTrueAndLastSeenAtAfter(OffsetDateTime threshold);

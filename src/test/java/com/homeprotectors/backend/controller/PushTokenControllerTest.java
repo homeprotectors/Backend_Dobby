@@ -46,16 +46,16 @@ class PushTokenControllerTest {
 
         given(userContextService.requireInternalUserId(eq(currentUserId))).willReturn(1L);
         given(pushTokenService.updateTokenEnabled(
-                eq(tokenId),
                 org.mockito.ArgumentMatchers.any(),
                 eq(currentUserId)
         )).willReturn(new PushTokenResponse(tokenId, DevicePlatform.IOS, false));
 
-        mockMvc.perform(patch("/api/push-tokens/{tokenId}/enabled", tokenId)
+        mockMvc.perform(patch("/api/push-tokens/me/enabled")
                         .requestAttr("currentUserId", currentUserId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "pushToken": "controller-test-token",
                                   "enabled": false
                                 }
                                 """))

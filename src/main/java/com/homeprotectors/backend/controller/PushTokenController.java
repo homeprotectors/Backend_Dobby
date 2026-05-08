@@ -48,12 +48,11 @@ public class PushTokenController {
     }
 
     @Operation(summary = "Push token 알림 on/off", description = "Enable or disable push notifications for one of the current user's push tokens")
-    @PatchMapping("/{tokenId}/enabled")
+    @PatchMapping("/me/enabled")
     public ResponseEntity<ResponseDTO<PushTokenResponse>> updateTokenEnabled(
-            @PathVariable Long tokenId,
             @Valid @RequestBody PushTokenEnabledUpdateRequest request,
             @RequestAttribute("currentUserId") UUID currentUserId) {
-        PushTokenResponse response = pushTokenService.updateTokenEnabled(tokenId, request, currentUserId);
+        PushTokenResponse response = pushTokenService.updateTokenEnabled(request, currentUserId);
         return ResponseEntity.ok(new ResponseDTO<>(true, "Push token notification setting updated", response));
     }
 }

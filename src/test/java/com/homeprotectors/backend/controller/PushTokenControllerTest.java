@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,6 +39,24 @@ class PushTokenControllerTest {
 
     @MockBean
     private JwtTokenService jwtTokenService;
+
+    @Test
+    void getToken_returnsCurrentState() throws Exception {
+        UUID currentUserId = UUID.randomUUID();
+
+        given(userContextService.requireInternalUserId(eq(currentUserId))).willReturn(1L);
+        given(pushTokenService.getToken("controller-test-token", currentUserId))
+                .willReturn(new PushTokenResponse(10L, DevicePlatform.IOS, true));
+
+        mockMvc.perform(get("/api/push-tokens/me")
+                        .requestAttr("currentUserId", currentUserId)
+                        .param("pushToken", "controller-test-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(10))
+                .andExpect(jsonPath("$.data.platform").value("IOS"))
+                .andExpect(jsonPath("$.data.enabled").value(true));
+    }
 
     @Test
     void updateTokenEnabled_returnsUpdatedState() throws Exception {

@@ -11,7 +11,17 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
@@ -38,6 +48,15 @@ public class PushTokenController {
                 .body(new ResponseDTO<>(true, "Push token registered successfully", response));
     }
 
+    @Operation(summary = "Push token 설정 조회", description = "Get the current user's push token notification setting")
+    @GetMapping("/me")
+    public ResponseEntity<ResponseDTO<PushTokenResponse>> getToken(
+            @RequestParam String pushToken,
+            @RequestAttribute("currentUserId") UUID currentUserId) {
+        PushTokenResponse response = pushTokenService.getToken(pushToken, currentUserId);
+        return ResponseEntity.ok(new ResponseDTO<>(true, "Push token fetched successfully", response));
+    }
+
     @Operation(summary = "Push token 삭제", description = "Delete one of the current user's push tokens")
     @DeleteMapping("/{tokenId}")
     public ResponseEntity<Void> deleteToken(
@@ -47,7 +66,7 @@ public class PushTokenController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Push token 알림 on/off", description = "Enable or disable push notifications for one of the current user's push tokens")
+    @Operation(summary = "Push token 알림 on/off", description = "Enable or disable push notifications for the current user's push token")
     @PatchMapping("/me/enabled")
     public ResponseEntity<ResponseDTO<PushTokenResponse>> updateTokenEnabled(
             @Valid @RequestBody PushTokenEnabledUpdateRequest request,

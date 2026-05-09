@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -51,6 +52,28 @@ class PushTokenControllerIntegrationTest {
         deviceTokenRepository.deleteAll();
         userRepository.deleteAll();
         groupRepository.deleteAll();
+    }
+
+    @Test
+    void getToken_returnsCurrentDeviceTokenSetting() throws Exception {
+        Group group = groupRepository.save(new Group(null, null, "My Home", "INVITE10", null, null));
+        User user = userRepository.saveAndFlush(new User(UUID.randomUUID(), UUID.randomUUID(), group.getId()));
+
+        DeviceToken token = new DeviceToken();
+        token.setUserId(user.getId());
+        token.setPlatform(DevicePlatform.IOS);
+        token.setPushToken("integration-token-0");
+        token.setEnabled(true);
+        token.setLastSeenAt(OffsetDateTime.now());
+        token = deviceTokenRepository.saveAndFlush(token);
+
+        mockMvc.perform(get("/api/push-tokens/me")
+                        .requestAttr("currentUserId", user.getPublicId())
+                        .param("pushToken", "integration-token-0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(token.getId()))
+                .andExpect(jsonPath("$.data.platform").value("IOS"))
+                .andExpect(jsonPath("$.data.enabled").value(true));
     }
 
     @Test

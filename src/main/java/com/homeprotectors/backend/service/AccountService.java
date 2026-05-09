@@ -37,11 +37,7 @@ public class AccountService {
         Long internalUserId = user.getId();
         Long groupId = user.getGroupId();
 
-        deviceTokenRepository.deleteByUserId(internalUserId);
-        notificationDeliveryLogRepository.deleteByUserId(internalUserId);
-        userRepository.delete(user);
-
-        if (userRepository.countByGroupId(groupId) > 0) {
+        if (userRepository.countByGroupId(groupId) > 1) {
             throw new ApiException("GROUP_HAS_OTHER_MEMBERS", "Cannot delete shared group with this endpoint.");
         }
 
@@ -49,6 +45,10 @@ public class AccountService {
         stockRepository.deleteByGroupId(groupId);
         billHistoryRepository.deleteByGroupId(groupId);
         billRepository.hardDeleteByGroupId(groupId);
+
+        deviceTokenRepository.deleteByUserId(internalUserId);
+        notificationDeliveryLogRepository.deleteByUserId(internalUserId);
+        userRepository.delete(user);
         groupRepository.deleteById(groupId);
     }
 }

@@ -28,8 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final Set<String> publicPaths = Set.of(
             "/api/guests/register",
             "/api/auth/refresh",
-            "/api/admin/notifications/daily-chore-reminder/dispatch",
-            "/api/admin/notifications/daily-chore-reminder/test-dispatch",
             "/actuator/health"
     );
 

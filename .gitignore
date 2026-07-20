@@ -41,3 +41,11 @@ out/
 .vscode/
 /secrets/jwt_private.pem
 /secrets/jwt_public.pem
+
+### Terraform ###
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+infra/docs/inventory.private.md
+infra/docs/inventory.raw/

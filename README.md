@@ -1,10 +1,20 @@
 # DueIt Backend
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+![AWS](https://img.shields.io/badge/AWS-EC2%20%7C%20ECR-orange)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-purple)
+
+<sub>Click to watch the DueIt app demo</sub>
+
+https://github.com/user-attachments/assets/a5543d3f-8ee5-4573-ab7d-3adf184868d7
+
 
 [🌐 Project Homepage](https://turquoise-pulsar-0e3.notion.site/DueIt-1cf4e53559a580ff88d5cf8e807b1923?pvs=74)
 
 집안일과 생활용품을 함께 관리하는 생활 관리 서비스 **DueIt**의 Backend API입니다.
 
-Spring Boot 기반 API 개발부터 Docker 컨테이너화, GitHub Actions, AWS ECR, EC2 배포 환경까지 구성했습니다. 현재는 기존 AWS 인프라를 Terraform 관리 대상으로 전환하고 있습니다.
+Spring Boot 기반 API 개발부터 Docker 컨테이너화, GitHub Actions, AWS ECR, EC2 배포 환경까지 구성하였습니다. 현재는 기존 AWS 인프라를 Terraform 관리 대상으로 전환하고 있습니다.
 
 ## Key Features
 

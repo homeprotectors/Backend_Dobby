@@ -32,7 +32,7 @@ export PGPASSWORD
 : "${OCI_REGION:?OCI_REGION is required}"
 
 if [[ "$(pg_dump --version)" != *"PostgreSQL) 17."* ]]; then
-  echo "PostgreSQL 17 pg_dump is required for the RDS 17 source server." >&2
+  echo "PostgreSQL 17 pg_dump is required for the Supabase database." >&2
   exit 1
 fi
 
@@ -63,6 +63,7 @@ trap notify_failure ERR
 
 pg_dump \
   --format=custom \
+  --schema=public \
   --no-owner \
   --no-privileges \
   --dbname="$BACKUP_DATABASE_URL" \

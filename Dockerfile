@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ########## BUILD STAGE ##########
-FROM gradle:8.13-jdk21 AS build
+FROM --platform=$BUILDPLATFORM gradle:8.13-jdk21 AS build
 WORKDIR /workspace
 
 # Gradle 메타만 먼저 복사해 의존성 레이어 캐시

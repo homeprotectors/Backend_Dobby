@@ -1,0 +1,13 @@
+tenancy_ocid       = "ocid1.tenancy.oc1..replace-me"
+compartment_ocid   = "ocid1.compartment.oc1..replace-me"
+oci_region         = "ap-tokyo-1"
+ssh_public_key     = "ssh-ed25519 AAAA... operator@example"
+ssh_allowed_cidr   = "203.0.113.10/32"
+app_domain         = "api.example.com"
+backup_bucket_name = "homeprotectors-production-backups-replace-me"
+state_bucket_name  = "homeprotectors-terraform-state-replace-me"
+budget_alert_email = "operator@example.com"
+
+# Create the project in the Supabase console in ap-northeast-2 first.
+manage_supabase_settings = false
+supabase_project_ref      = "zulfdzwjmowupwwmrael"

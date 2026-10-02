@@ -1,0 +1,94 @@
+name: homeprotectors
+
+services:
+  app:
+    image: ${IMAGE_REPOSITORY:?IMAGE_REPOSITORY is required}:${APP_VERSION:?APP_VERSION is required}
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        format: raw
+    expose:
+      - "8080"
+    ports:
+      - "127.0.0.1:8080:8080"
+    secrets:
+      - jwt_private
+      - jwt_public
+      - firebase_service_account
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2.10-alpine
+    profiles:
+      - direct
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN is required}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    user: "1001:1001"
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token-file
+      - /run/secrets/cloudflare_tunnel_token
+    network_mode: host
+    depends_on:
+      app:
+        condition: service_healthy
+    secrets:
+      - cloudflare_tunnel_token
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+secrets:
+  jwt_private:
+    file: ./secrets/jwt_private.pem
+  jwt_public:
+    file: ./secrets/jwt_public.pem
+  firebase_service_account:
+    file: ./secrets/firebase-service-account.json
+  cloudflare_tunnel_token:
+    file: ./secrets/cloudflare-tunnel-token
+
+networks:
+  internal:
+
+volumes:
+  caddy_data:
+  caddy_config:

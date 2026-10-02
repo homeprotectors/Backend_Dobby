@@ -2,79 +2,66 @@ name: ci-cd
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
-  id-token: write
   contents: read
 
-env:
-  AWS_REGION: ap-northeast-2
-  ECR_REPO: homeprotectors
+concurrency:
+  group: production-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - name: Test
+        run: ./gradlew test --no-daemon
+
+  publish:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
+      image_repository: ${{ steps.meta.outputs.repository }}
       image_tag: ${{ steps.meta.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-      - name: Derive image tag
+      - name: Derive image coordinates
         id: meta
+        shell: bash
         run: |
-          SHORT=${GITHUB_SHA::12}
-          echo "tag=prod-${SHORT}-${GITHUB_RUN_ATTEMPT}" >> $GITHUB_OUTPUT
-
-      - name: Configure AWS credentials (OIDC)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: aws-actions/configure-aws-credentials@v4
+          repository="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          tag="prod-${GITHUB_SHA::12}-${GITHUB_RUN_ATTEMPT}"
+          echo "repository=$repository" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::146414906510:role/GitHubActionsPushToECR
-          role-session-name: gh-actions-ecr
-
-      - name: Login to ECR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push (main만)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push ARM64 image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/arm64
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            146414906510.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.meta.outputs.tag }}
-
-  deploy-ec2:
-    needs: build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: SSH deploy (compose pull & up)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            export APP_VERSION=${{ needs.build-and-push.outputs.image_tag }}
-
-            REGION=${REGION:-ap-northeast-2}
-            ACCOUNT_ID=146414906510
-            REGISTRY="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
-            aws ecr get-login-password --region "$REGION" \
-            | docker login --username AWS --password-stdin "$REGISTRY"
-            cd /srv/homeprotectors
-            APP_VERSION=${APP_VERSION} docker compose pull
-            APP_VERSION=${APP_VERSION} docker compose up -d --remove-orphans
-            docker image prune -f
+            ${{ steps.meta.outputs.repository }}:${{ steps.meta.outputs.tag }}
+            ${{ steps.meta.outputs.repository }}:prod-latest

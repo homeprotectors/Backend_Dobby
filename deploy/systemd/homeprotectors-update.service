@@ -1,0 +1,9 @@
+[Unit]
+Description=Pull and deploy the latest Homeprotectors image
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/homeprotectors/scripts/check-update.sh

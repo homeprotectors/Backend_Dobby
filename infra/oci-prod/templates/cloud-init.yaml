@@ -1,0 +1,76 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - docker.io
+  - docker-compose-v2
+  - jq
+  - openssl
+  - pipx
+  - postgresql-common
+
+write_files:
+  - path: /etc/homeprotectors/infra.env
+    owner: root:root
+    permissions: "0600"
+    content: |
+      APP_DOMAIN=${app_domain}
+      OCI_BACKUP_BUCKET=${backup_bucket}
+      OCI_BACKUP_NAMESPACE=${backup_namespace}
+      OCI_REGION=${backup_region}
+  - path: /etc/apt/sources.list.d/pgdg.sources
+    owner: root:root
+    permissions: "0644"
+    content: |
+      Types: deb
+      URIs: https://apt.postgresql.org/pub/repos/apt
+      Suites: noble-pgdg
+      Architectures: arm64
+      Components: main
+      Signed-By: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+  - path: /etc/systemd/system/homeprotectors-backup.service
+    owner: root:root
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Homeprotectors encrypted PostgreSQL backup
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      User=root
+      EnvironmentFile=/etc/homeprotectors/infra.env
+      ExecStart=/srv/homeprotectors/scripts/backup-db.sh
+  - path: /etc/systemd/system/homeprotectors-backup.timer
+    owner: root:root
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Daily Homeprotectors database backup
+
+      [Timer]
+      OnCalendar=*-*-* 18:00:00 UTC
+      Persistent=true
+      RandomizedDelaySec=15m
+
+      [Install]
+      WantedBy=timers.target
+
+runcmd:
+  - [install, -d, /usr/share/postgresql-common/pgdg]
+  - [curl, --fail, --silent, --show-error, -o, /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc, https://www.postgresql.org/media/keys/ACCC4CF8.asc]
+  - [apt-get, update]
+  - [apt-get, install, --yes, postgresql-client-17]
+  - [mkdir, -p, /srv/homeprotectors/secrets, /srv/homeprotectors/scripts, /var/lib/homeprotectors/backups]
+  - [chown, -R, "ubuntu:ubuntu", /srv/homeprotectors]
+  - [chmod, "0700", /srv/homeprotectors/secrets, /var/lib/homeprotectors/backups]
+  - [usermod, -aG, docker, ubuntu]
+  - [systemctl, enable, --now, docker]
+  - [sudo, -u, ubuntu, pipx, install, oci-cli]
+  - [ln, -sf, /home/ubuntu/.local/bin/oci, /usr/local/bin/oci]
+  - [systemctl, daemon-reload]
+
+final_message: "Homeprotectors OCI host bootstrap completed after $UPTIME seconds"

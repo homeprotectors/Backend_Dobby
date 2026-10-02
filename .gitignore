@@ -1,7 +1,7 @@
 HELP.md
 .gradle
 .gradle-home*/
-build/
+/build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -47,5 +47,14 @@ out/
 *.tfstate
 *.tfstate.*
 *.tfplan
+*.tfvars
+!*.tfvars.example
 infra/docs/inventory.private.md
+infra/docs/oci-supabase-migration.private.md
 infra/docs/inventory.raw/
+
+### Production deployment secrets and database artifacts ###
+deploy/.env
+deploy/secrets/
+*.dump
+*.dump.enc

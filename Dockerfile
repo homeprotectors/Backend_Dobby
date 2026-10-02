@@ -8,19 +8,22 @@ WORKDIR /workspace
 COPY --chown=gradle:gradle gradle /workspace/gradle
 COPY --chown=gradle:gradle gradlew settings.gradle build.gradle /workspace/
 
-# gradlew 동작 확인(래퍼/버전 캐시)
-RUN chmod +x gradlew && ./gradlew --version
-
-# 의존성만 먼저 다운로드(변경 적으면 캐시 재사용)
-RUN ./gradlew dependencies --no-daemon || true
-
 # 앱 소스 전체 복사 - 실제 빌드
 COPY --chown=gradle:gradle . /workspace
-RUN ./gradlew clean bootJar -x test --no-daemon
+RUN chmod +x gradlew && ./gradlew clean bootJar -x test --no-daemon
 
 ########## RUNTIME STAGE ##########
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jre-noble
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system app \
+    && useradd --system --gid app --home-dir /app app
 COPY --from=build /workspace/build/libs/app.jar /app/app.jar
+RUN chown app:app /app/app.jar
+USER app
 EXPOSE 8080
+HEALTHCHECK --interval=20s --timeout=5s --start-period=60s --retries=6 \
+  CMD curl --fail --silent http://localhost:8080/actuator/health || exit 1
 ENTRYPOINT ["java","-jar","/app/app.jar"]

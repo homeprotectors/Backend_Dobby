@@ -47,6 +47,28 @@ password; the backup script reads `DATABASE_PASSWORD` separately. Object Storage
 injected into `/etc/homeprotectors/infra.env` by cloud-init. Set the optional
 `BACKUP_FAILURE_WEBHOOK_URL` to receive systemd backup-failure notifications.
 
+## Supabase access control
+
+Production uses a direct Postgres connection, not Supabase client libraries or
+PostgREST. In the Supabase dashboard, **Data API is disabled**, **Automatically
+expose new tables is disabled**, and **Enforce SSL on incoming connections is
+enabled**. Keep `sslmode=require` on every direct database connection.
+
+The one-time `sql/lock-down-supabase-public.sql` migration enabled RLS on the
+13 existing application tables and removed `anon`/`authenticated` grants on
+their tables, sequences, and public functions. It also removed the `postgres`
+role's default client grants for future objects. Run it only after inspecting
+the current schema and taking a verified backup: its preflight intentionally
+rejects a different table/sequence/function count. Supabase's `supabase_admin`
+default grants may still exist; do not re-enable Data API or automatic table
+exposure without auditing new objects and their grants first.
+
+The backend currently connects as `postgres`, which bypasses RLS. Thus RLS is
+defense against direct client-role access, **not** authorization for requests
+through the backend. The application JWT checks and endpoint-level ownership
+checks must remain in place. Never put the database password, service-role key,
+or JWT signing key in a client app or repository.
+
 For the migration, use `restore-supabase.sh` on the empty project and compare
 `table-counts.sh` results from AWS (`source`) and OCI (`target`). During the
 planned write freeze, stop the OCI smoke app, take a fresh RDS dump, and run
